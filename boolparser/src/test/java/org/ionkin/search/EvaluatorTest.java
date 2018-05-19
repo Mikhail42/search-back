@@ -66,11 +66,7 @@ public class EvaluatorTest {
     }
 
     private byte[] compress(int... ar) {
-        logger.debug("ar: {}", ar.length);
-        for (int a : ar) {
-            logger.debug("ar_i={}", a);
-        }
-        return Compressor.diffAndCompressInts(ar);
+        return Compressor.compressVbWithoutMemory(ar);
     }
 
     @Test

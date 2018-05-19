@@ -1,14 +1,8 @@
 package org.ionkin.search;
 
-import com.google.common.base.Utf8;
 import javafx.util.Pair;
-import org.ionkin.search.map.CompactHashMap;
-import org.ionkin.search.map.IntIntTranslator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.lth.cs.nlp.mediawiki.model.Page;
-import se.lth.cs.nlp.mediawiki.parser.SinglestreamXmlDumpParser;
-import se.lth.cs.nlp.pipeline.PipelineBuilder;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -90,31 +84,5 @@ public class FileWorker {
                 .map(Integer::parseInt)
                 .mapToInt(Integer::intValue)
                 .toArray();
-    }
-
-    public static void writeEndArticlePositions() throws Exception {
-        CompactHashMap<Integer, Integer> articlePositions = new CompactHashMap<>(new IntIntTranslator());
-        PipelineBuilder.input(new SinglestreamXmlDumpParser(
-                new File("/media/mikhail/Windows/Users/Misha/Downloads/ruwiki-20180201-pages-articles-multistream.xml" +
-                        "/ruwiki-20180201-pages-articles-multistream.xml"), 500)).pipe(batch -> {
-            if (!batch.isEmpty()) {
-                int size = batch.size();
-                int[] ids = new int[size];
-                int[] poss = new int[size];
-                int i = 0;
-                for (Page p : batch) {
-                    ids[i] = (int) p.getId();
-                    poss[i] = Utf8.encodedLength(p.getContent());
-                    i++;
-                }
-                articlePositions.put(ids[0], poss[0]);
-                for (i = 1; i < size; i++) {
-                    poss[i] += poss[i - 1];
-                    articlePositions.put(ids[i], poss[i]);
-                }
-                logger.info("current id: {}", batch.get(0).getId());
-            }
-        }).run();
-        articlePositions.write(basePath + "ids/endPositions");
     }
 }

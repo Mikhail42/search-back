@@ -89,8 +89,7 @@ public class Evaluator {
         if (comp == null) {
             return new int[0];
         }
-        byte[] sum = Compressor.decompressAndSumInts(comp);
-        return IO.readArrayInt(sum, 0, sum.length / 4);
+        return Compressor.decompressVb(comp);
     }
 
     static int[] or(int[] ar1, int[] ar2) {

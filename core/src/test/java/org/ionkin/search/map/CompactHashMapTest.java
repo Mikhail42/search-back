@@ -1,6 +1,7 @@
 package org.ionkin.search.map;
 
 import junit.framework.TestCase;
+import org.ionkin.search.Compressor;
 import org.ionkin.search.LightString;
 
 import java.io.File;
@@ -36,15 +37,17 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.UnsupportedEncodingException;
 
+import org.ionkin.search.VariableByte;
 import org.junit.Test;
 
-public class CompactHashMapTest extends TestCase {
+public class CompactHashMapTest {
 
     private final CompactMapTranslator<LightString, byte[]> translator = new StringBytesTranslator();
 
     /**
      * @author M. Ionkin
      */
+    @Test
     public void testWriteRead() throws IOException {
         File file = File.createTempFile("MyApp", "tmp");
         file.deleteOnExit();
@@ -314,18 +317,12 @@ public class CompactHashMapTest extends TestCase {
         }
     };
 
-    public void testSizeOfTableWithLength() {
+    @Test
+    public void sizeOfTableWithLength() {
         CompactHashMap<LightString, byte[]> map = new CompactHashMap<>(new StringBytesTranslator());
         map.put(new LightString("мама"), new byte[]{1, 2, 3});
         map.put(new LightString("папа"), new byte[]{1, 2, 3, 5});
         assertEquals( (4 + 1 + 1 + 3) + (4 + 1 + 1 + 4), map.sizeOfTableWithLength());
-    }
-
-    public void testSizeOfTableWithoutLength() {
-        CompactHashMap<LightString, byte[]> map = new CompactHashMap<>(new StringBytesTranslator());
-        map.put(new LightString("мама"), new byte[]{1, 2, 3});
-        map.put(new LightString("папа"), new byte[]{1, 2, 3, 5});
-        assertEquals(map.sizeOfTableWithoutLength(), (1 + 4 + 3) + (1 + 4 + 4));
     }
 
     public LightString[] toArray(Set<LightString> set) {
@@ -335,7 +332,8 @@ public class CompactHashMapTest extends TestCase {
         return a;
     }
 
-    public void testJoin() throws IOException {
+    @Test
+    public void join() throws IOException {
         /*CompactHashMap<LightString, Integer> tokensMap =
                 CompactHashMap.read("/media/mikhail/Windows/Users/Misha/workspace/wiki-bz2/freq/allTokens", new StringIntTranslator());
         LightString[] tokens = toArray(tokensMap.keySet());
@@ -361,5 +359,23 @@ public class CompactHashMapTest extends TestCase {
         });
         System.err.flush();
         int s = 4;
+    }
+
+
+    /**
+     * @author M. Ionkin
+     */
+    @Test
+    public void joinStringBytes() throws Exception {
+        LightString word = new LightString("word");
+        LightString mir = new LightString("mir");
+        CompactHashMap<LightString, byte[]> ib1 = new CompactHashMap<>(new StringBytesTranslator());
+        ib1.put(word, Compressor.compressVbWithoutMemory(new int[]{1, 3, 5, 6}));
+        ib1.put(mir, Compressor.compressVbWithoutMemory(new int[]{1, 6, 23, 30}));
+        CompactHashMap<LightString, byte[]> ib2 = new CompactHashMap<>(new StringBytesTranslator());
+        ib2.put(word, Compressor.compressVbWithoutMemory(new int[]{10, 50, 103, 200}));
+        LightString[] words = new LightString[] {word, mir};
+
+        CompactHashMap.joinStringBytesMap(words, new CompactHashMap[] {ib1, ib2});
     }
 }

@@ -23,7 +23,9 @@ package org.ionkin.search.map;
  *   Software.
  */
 
+import com.google.common.primitives.Bytes;
 import javafx.util.Pair;
+import org.ionkin.search.Compressor;
 import org.ionkin.search.IO;
 import org.ionkin.search.LightString;
 import org.ionkin.search.VariableByte;
@@ -37,7 +39,7 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.*;
-
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A hash table based map that stores data as byte arrays, but converts to and from regular Java objects
@@ -94,6 +96,39 @@ public final class CompactHashMap<K, V> extends AbstractMap<K, V> implements Ser
         return res;
     }
 
+    /**
+     * @author M. Ionkin
+     */
+    public static CompactHashMap<LightString, byte[]> joinStringBytesMap(LightString[] words,
+                                                                         CompactHashMap<LightString, byte[]>[] maps) {
+        CompactHashMap<LightString, byte[]> res = new CompactHashMap<>(new StringBytesTranslator());
+        for (LightString word : words) {
+            // join index for one word
+            int size = 0;
+            List<int[]> list = new LinkedList<>();
+            for (CompactHashMap<LightString, byte[]> map : maps) {
+                byte[] ar = map.get(word);
+                if (ar != null) {
+                    int[] src = Compressor.decompressVb(ar);
+                    list.add(src);
+                    size += src.length;
+                }
+            }
+            int[] buf = new int[size];
+            AtomicInteger ai = new AtomicInteger(0);
+            list.forEach(ar -> {
+                System.arraycopy(ar, 0, buf, ai.get(), ar.length);
+                ai.addAndGet(ar.length);
+            });
+
+            if (size != 0) {
+                byte[] compact = Compressor.compressVbWithoutMemory(buf);
+                res.put(word, compact);
+            }
+        }
+        return res;
+    }
+
 
     /**
      * @author M. Ionkin
@@ -103,19 +138,6 @@ public final class CompactHashMap<K, V> extends AbstractMap<K, V> implements Ser
         for (int i = 0; i < table.length; i++) {
             if (table[i] != null) {
                 size += table[i].length + VariableByte.compressedLengthOfLength(table[i]);
-            }
-        }
-        return size;
-    }
-
-    /**
-     * @author M. Ionkin
-     */
-    public long sizeOfTableWithoutLength() {
-        long size = 0;
-        for (int i = 0; i < table.length; i++) {
-            if (table[i] != null) {
-                size += table[i].length;
             }
         }
         return size;
@@ -167,19 +189,31 @@ public final class CompactHashMap<K, V> extends AbstractMap<K, V> implements Ser
     public void write(String filename) throws IOException {
         long size = sizeOfTableWithLength();
         if (size < Integer.MAX_VALUE) {
-            IO.write(serialize(), filename);
-            /*try (FileChannel rwChannel = new RandomAccessFile(filename, "rw").getChannel()) {
+            logger.info("try write to {}", filename);
+            //IO.write(serialize(), filename);
+            try (FileChannel rwChannel = new RandomAccessFile(filename, "rw").getChannel()) {
                 ByteBuffer wrBuf = rwChannel.map(FileChannel.MapMode.READ_WRITE, 0, size);
                 for (int i = 0; i < table.length; i++) {
                     if (table[i] != null) {
-                        wrBuf.putInt(table[i].length);
-                        wrBuf.put(table[i]);
+                        write(wrBuf, table[i]);
+                        table[i] = null;
+                    }
+                    if (i % 300000 == 0) {
+                        logger.info("gc. i={}", i);
+                        System.gc();
                     }
                 }
-            }*/
+            }
         } else {
             write(filename, 10);
         }
+    }
+
+    private void write(ByteBuffer wrBuf, byte[] kvp) {
+        ArrayList<Byte> lengthComp = VariableByte.compress(kvp.length);
+        byte[] ar = Bytes.toArray(lengthComp);
+        wrBuf.put(ar);
+        wrBuf.put(kvp);
     }
 
     // TODO: it is bad code, but work. Now I don't have time to fix worked code
@@ -398,7 +432,6 @@ public final class CompactHashMap<K, V> extends AbstractMap<K, V> implements Ser
         }
     }
 
-
     private void incrementSize() {
         size++;
         if (table.length < MAX_TABLE_LEN && (double) filled / table.length > loadFactor) {  // Refresh or expand hash table
@@ -605,25 +638,5 @@ public final class CompactHashMap<K, V> extends AbstractMap<K, V> implements Ser
 
         }
 
-    }
-
-    /**
-     * @author M. Ionkin
-     */
-    private List<Pair<Integer, Long>> indicesAndSizeOfNthGb() {
-        List<Pair<Integer, Long>> indices = new ArrayList<>();
-        int nthGb = 1;
-        long size = 0;
-        indices.add(new Pair<>(0, 0L));
-        for (int i = 0; i < table.length; i++) {
-            if (table[i] != null) {
-                size += table[i].length + 4;
-                if (size > nthGb * 1_000_000) {
-                    indices.add(new Pair<>(i, size));
-                    nthGb++;
-                }
-            }
-        }
-        return indices;
     }
 }

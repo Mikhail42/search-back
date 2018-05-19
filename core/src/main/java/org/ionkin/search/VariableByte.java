@@ -71,7 +71,7 @@ public class VariableByte {
     public static void addCompressed(List<Byte> acc, int val) {
         if (val < 0 || val >= 0x10000000) {
             // if error is occur, use long
-            logger.error("Can't compress {}, because it is less than 0 or more or equals than 2^28", val);
+            throw new RuntimeException("Can't compress " + val + ", because it is less than 0 or more or equals than 2^28");
         } else if (val < 0x80) {
             acc.add((byte) (val | 0x80));
         } else if (val < 0x4000) {

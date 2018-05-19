@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -88,8 +89,8 @@ public class EvaluatorPerformance {
         if (comp == null) {
             return new int[0];
         }
-        byte[] sum = Compressor.decompressAndSumInts(comp, count);
-        return IO.readArrayInt(sum, 0, count);
+        int[] res = Compressor.decompressVb(comp);
+        return Arrays.copyOf(res, count);
     }
 
     static int[] or(int[] ar1, int[] ar2, int count) {

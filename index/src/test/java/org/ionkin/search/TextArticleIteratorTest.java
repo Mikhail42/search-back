@@ -11,7 +11,7 @@ import static org.junit.Assert.*;
 public class TextArticleIteratorTest {
 
 
-    @Test
+    //@Test
     public void readPage() throws IOException {
         TextArticleIterator iterator = new TextArticleIterator();
         Page mamontPage = iterator.readPage(11);
@@ -27,7 +27,7 @@ public class TextArticleIteratorTest {
         assertEquals(map.get(7), "AA f");
     }
 
-    @Test
+    //@Test
     public void iterate() throws Exception {
         TextArticleIterator iterator = new TextArticleIterator();
         Iterator<Page> pageIterator = iterator.articleTextIterator();

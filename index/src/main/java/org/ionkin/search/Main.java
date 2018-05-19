@@ -63,6 +63,6 @@ public class Main {
         invertIndex.forEach((k, v) -> invertIndexLight.put(k, v.stream().mapToInt(i->i).toArray()));
         invertIndexLight.remove(new LightString(""));
         logger.debug("write to {}", Util.basePath + "invertedIndex/" + hundredsThousands);
-        Serializer.serialize(invertIndexLight, Util.basePath + "invertedIndex2/" + hundredsThousands);
+        //Serializer.serialize(invertIndexLight, Util.basePath + "invertedIndex2/" + hundredsThousands);
     }
 }
