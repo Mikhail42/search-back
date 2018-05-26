@@ -1,6 +1,7 @@
 package org.ionkin.search;
 
 import org.ionkin.search.map.CompactHashMap;
+import org.ionkin.search.map.StringBytesMap;
 import org.ionkin.search.map.StringBytesTranslator;
 import org.junit.Test;
 import org.scijava.parse.SyntaxTree;
@@ -13,12 +14,11 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 public class EvaluatorTest {
-    private static Logger logger = LoggerFactory.getLogger(EvaluatorTest.class);
 
     @Test
     public void createSyntaxTree() {
         String query = "!word && (a || b) && c || p";
-        SyntaxTree syntaxTree = Evaluator.createSyntaxTree(query);
+        SyntaxTree syntaxTree = EvaluatorPerformance.createSyntaxTree(query);
         assertEquals(syntaxTree.token().toString(), "+");
         assertEquals(syntaxTree.child(1).toString(), " 'p'\n");
 
@@ -40,18 +40,21 @@ public class EvaluatorTest {
         assertEquals(grandchild0010.child(1).toString(), " 'b'\n");
     }
 
-    private final CompactHashMap<LightString, byte[]> index = new CompactHashMap<>(new StringBytesTranslator()); {
-        index.put(new LightString("word"), compress(1, 5));
-        index.put(new LightString("a"), compress(1, 3, 4));
-        index.put(new LightString("b"), compress(2, 3));
-        index.put(new LightString("c"), compress(5));
-        index.put(new LightString("p"), compress(1, 10));
-    }
+    private final StringBytesMap index = new StringBytesMap() {{
+        put(new LightString("word"), compress(1, 5));
+        put(new LightString("a"), compress(1, 3, 4));
+        put(new LightString("b"), compress(2, 3));
+        put(new LightString("c"), compress(5));
+        put(new LightString("p"), compress(1, 10));
+    }};
     private final int[] allIds = new int[]{1, 2, 3, 4, 5, 10};
-    private final Evaluator evaluator = new Evaluator(index, allIds);
-
+    private final EvaluatorPerformance evaluator = new EvaluatorPerformance(index, allIds);
 
     // TODO: try to use another library to simplify expression
+    @Test
+    public void evaluateComplexQuery() {
+        evaluator.evaluate("!\"word a\" / 4 || [v && (c b)]", 50);
+    }
 
     @Test
     public void evaluate() {
@@ -61,7 +64,7 @@ public class EvaluatorTest {
         // !word && (a || b) == 2, 3, 4
         // !word && (a || b) && c == {}
         // !word && (a || b) && c || p == p == 1, 10
-        int[] indices = evaluator.evaluate(query);
+        int[] indices = evaluator.evaluate(query, 50);
         assertTrue(Arrays.equals(indices, new int[]{1, 10}));
     }
 
@@ -71,25 +74,25 @@ public class EvaluatorTest {
 
     @Test
     public void get() {
-        int[] ar = evaluator.get(new LightString("a"));
+        int[] ar = evaluator.get(new LightString("a"), 50);
         assertTrue(Arrays.equals(ar, new int[]{1, 3, 4}));
     }
 
     @Test
     public void or() {
-        int[] or = Evaluator.or(new int[]{1, 3, 5}, new int[]{2, 3, 5, 10});
+        int[] or = EvaluatorPerformance.or(new int[]{1, 3, 5}, new int[]{2, 3, 5, 10}, 50);
         assertTrue(Arrays.equals(or, new int[]{1, 2, 3, 5, 10}));
     }
 
     @Test
     public void and() {
-        int[] and = Evaluator.and(new int[]{1, 3, 5}, new int[]{2, 3, 5, 10});
+        int[] and = EvaluatorPerformance.and(new int[]{1, 3, 5}, new int[]{2, 3, 5, 10}, 50);
         assertTrue(Arrays.equals(and, new int[]{3, 5}));
     }
 
     @Test
     public void firstAndNotSecond() {
-        int[] ar = Evaluator.firstAndNotSecond(new int[]{1, 3, 5}, new int[]{2, 3, 5, 10});
+        int[] ar = EvaluatorPerformance.firstAndNotSecond(new int[]{1, 3, 5}, new int[]{2, 3, 5, 10}, 50);
         assertTrue(Arrays.equals(ar, new int[]{1}));
     }
 }

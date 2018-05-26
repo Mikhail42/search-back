@@ -10,11 +10,9 @@ import static org.junit.Assert.*;
 
 public class TextArticleIteratorTest {
 
-
-    //@Test
+    @Test
     public void readPage() throws IOException {
-        TextArticleIterator iterator = new TextArticleIterator();
-        Page mamontPage = iterator.readPage(11);
+        Page mamontPage = TextArticleIterator.readPage(11);
         assertEquals(11, mamontPage.getId());
         assertEquals("Мамонты", mamontPage.getTitle());
         assertEquals("https://ru.wikipedia.org/wiki?curid=11", mamontPage.generateUrl());
@@ -27,10 +25,9 @@ public class TextArticleIteratorTest {
         assertEquals(map.get(7), "AA f");
     }
 
-    //@Test
-    public void iterate() throws Exception {
-        TextArticleIterator iterator = new TextArticleIterator();
-        Iterator<Page> pageIterator = iterator.articleTextIterator();
+    @Test
+    public void iterate() {
+        Iterator<Page> pageIterator = TextArticleIterator.articleTextIterator();
         assertNotNull(pageIterator);
         assertTrue(pageIterator.hasNext());
         Page litva = pageIterator.next();

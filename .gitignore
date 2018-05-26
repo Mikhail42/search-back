@@ -1,0 +1,16 @@
+#idea
+*.iml
+.idea/*
+
+logs/*
+*.log
+
+target/*
+*.class
+boolparser/target/*
+core/target/*
+graph/target/*
+index/target/*
+view/target/*
+
+

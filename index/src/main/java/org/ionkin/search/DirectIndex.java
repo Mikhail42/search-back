@@ -36,7 +36,7 @@ public class DirectIndex {
         logger.debug("string splitted");
         int length = 0;
         String[] titles = new String[ROWS];
-        Pattern pattern = Pattern.compile("[/d]{1,}:([/d]{1,}):(.*)");
+        Pattern pattern = Pattern.compile("[\\d]{1,}:([\\d]{1,}):(.*)");
         for (String line : lines) {
             if (line.length() > 0) {
                 Matcher m = pattern.matcher(line);

@@ -1,5 +1,6 @@
 package org.ionkin.search.map;
 
+import org.ionkin.search.Compressor;
 import org.ionkin.search.LightString;
 
 import java.io.Serializable;
@@ -22,5 +23,10 @@ public class StringBytesTranslator extends StringTranslator<byte[]> implements S
     public byte[] deserializeValue(byte[] packed) {
         int length = packed[0];
         return Arrays.copyOfRange(packed, length + 1, packed.length);
+    }
+
+    public int[] deserializeValue(byte[] packed, int take) {
+        int length = packed[0];
+        return Compressor.decompressVb(packed, length + 1, take);
     }
 }

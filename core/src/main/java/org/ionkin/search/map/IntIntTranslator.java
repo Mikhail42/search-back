@@ -15,7 +15,7 @@ public class IntIntTranslator extends IntTranslator<Integer> implements Serializ
 
     @Override
     public Integer deserializeValue(byte[] packed) {
-        int[] ar = VariableByte.uncompress(packed);
+        int[] ar = VariableByte.uncompress(packed, 2);
         return ar[1];
     }
 }

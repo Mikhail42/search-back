@@ -13,7 +13,7 @@ public class VariableByteTest {
     public void compressUncompress() {
         int[] ar = new int[] {1, 4, 9, 10, 100, 400};
         byte[] comp = VariableByte.compress(ar);
-        int[] uncomp = VariableByte.uncompress(comp);
+        int[] uncomp = VariableByte.uncompress(comp, 6);
         assertTrue(Arrays.equals(ar, uncomp));
     }
 }

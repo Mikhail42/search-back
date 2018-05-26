@@ -9,9 +9,11 @@ package org.ionkin.search;
 
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
+import org.omg.PortableInterceptor.INACTIVE;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,6 +70,12 @@ public class VariableByte {
         return res;
     }
 
+    public static byte[] compressToBytes(int val) {
+        ArrayList<Byte> res = new ArrayList<>(1);
+        addCompressed(res, val);
+        return Bytes.toArray(res);
+    }
+
     public static void addCompressed(List<Byte> acc, int val) {
         if (val < 0 || val >= 0x10000000) {
             // if error is occur, use long
@@ -90,10 +98,15 @@ public class VariableByte {
         }
     }
 
-    public static int[] uncompress(byte[] in) {
+    public static int[] uncompress(byte[] in, int take) {
+        return uncompress(in, 0, take);
+    }
+
+    public static int[] uncompress(byte[] in, int p, int take) {
         List<Integer> res = new ArrayList<>();
         int v;
-        for (int p = 0; p < in.length; res.add(v)) {
+        int count = 0;
+        for (; p < in.length && count < take; count++, res.add(v)) {
             v = in[p] & 0x7F;
             if (in[p] < 0) {
                 p += 1;
@@ -137,6 +150,28 @@ public class VariableByte {
                     v = ((in[p + 3] & 0x7F) << 21) | v;
                     if (in[p + 3] >= 0) {
                         v = ((in[p + 4] & 0x7F) << 28) | v;
+                    }
+                }
+            }
+        }
+        return v;
+    }
+
+    public static int uncompressFirst(ByteBuffer readBuffer) {
+        int a = readBuffer.get();
+        int v = a & 0x7F;
+        if (a >= 0) {
+            a = readBuffer.get();
+            v = ((a & 0x7F) << 7) | v;
+            if (a >= 0) {
+                a = readBuffer.get();
+                v = ((a & 0x7F) << 14) | v;
+                if (a >= 0) {
+                    a = readBuffer.get();
+                    v = ((a & 0x7F) << 21) | v;
+                    if (a >= 0) {
+                        a = readBuffer.get();
+                        v = ((a & 0x7F) << 28) | v;
                     }
                 }
             }

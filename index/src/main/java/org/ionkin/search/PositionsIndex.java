@@ -1,55 +1,35 @@
 package org.ionkin.search;
 
 import com.google.common.primitives.Ints;
-import org.ionkin.search.map.CompactHashMap;
-import org.ionkin.search.map.IntBytesTranslator;
-import org.ionkin.search.map.StringBytesTranslator;
-import org.ionkin.search.map.StringPositionsMapTranslator;
+import org.ionkin.search.map.*;
 import org.ionkin.search.set.CompactHashSet;
 import org.ionkin.search.set.StringTranslator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import java.io.File;
 import java.util.*;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class PositionsIndex {
-
-    private static final String pathToPos = "/home/mikhail/pos100000/";
-    private static final String pathToPos10 = "/home/mikhail/pos1mil/";
 
     private static Logger logger = LoggerFactory.getLogger(PositionsIndex.class);
 
     public static void main(String... args) throws Exception {
-        logger.info("start read");
-        //writePositionsBy100000Articles();
-        CompactHashMap<LightString, CompactHashMap<Integer, byte[]>> map = positionIndex();
-        System.gc();
-        map.wait(20 * 1000);
-        logger.info("stop. size = {}", map.size());
+        logger.info("start read. with wait");
+        writePositionsByFileArticles();
+        logger.info("positions writen");
+        joinByN(25);
+        logger.info("positions joined by 25");
+        joinAll();
+        logger.info("stop");
     }
-
-    public static CompactHashMap<LightString, CompactHashMap<Integer, byte[]>> positionIndex() throws IOException {
-        return CompactHashMap.read("/home/mikhail/pos1mil/joinAll", new StringPositionsMapTranslator());
-    }
-
-    private static final Pattern splitPattern = Pattern.compile("[^\\p{L}\\p{N}\u0301-]+");
-    private static final Pattern wordPattern = Pattern.compile("[\\p{L}\\p{N}\u0301-]+");
 
     public static void joinAll() throws Exception {
         logger.info("joinBy10");
         logger.debug("try read fileIds");
-        byte[] map1AsBytes = IO.read("/home/mikhail/pos1mil/0");
-        CompactHashMap<LightString, CompactHashMap<Integer, byte[]>> map1 =
-                CompactHashMap.deserialize(map1AsBytes, new StringPositionsMapTranslator());
-        map1AsBytes = null;
-        System.gc();
-        byte[] map2AsBytes = IO.read("/home/mikhail/pos1mil/join2");
-        CompactHashMap<LightString, CompactHashMap<Integer, byte[]>> map2 =
-                CompactHashMap.deserialize(map2AsBytes, new StringPositionsMapTranslator());
-        map2AsBytes = null;
+        StringPositionsMap map1 = new StringPositionsMap(Util.basePath + "AA f");
+        StringPositionsMap map2 = new StringPositionsMap(Util.basePath + "AZ f");
         logger.info("Both map read");
         System.gc();
         map2.forEach((k, v2) -> {
@@ -63,35 +43,33 @@ public class PositionsIndex {
         map2 = null;
         System.gc();
         logger.info("try write final result");
-        map1.write("/home/mikhail/pos1mil/joinAll");
+        map1.write(Util.positionsPath);
     }
 
-    public static void joinBy5() throws Exception {
-        logger.info("joinBy10");
+    public static void joinByN(int n) throws Exception {
+        logger.info("joinByN parallel");
         logger.debug("try read fileIds");
-        int[] fileIds = FileWorker.getFileNamesMathesDigits(pathToPos);
-        Arrays.sort(fileIds);
-        logger.debug("fileIds read from {}. size: {}", pathToPos, fileIds.length);
-        String filename = PositionsIndex.class.getClassLoader().getResource("allTokens.chsls").getFile();
-        CompactHashSet<LightString> tokensMap = CompactHashSet.read(filename, new StringTranslator());
+        String[] filenames = new File(Util.positionIndexFolder).list();
+        Arrays.sort(filenames);
+        logger.debug("fileIds read from {}. size: {}", Util.positionIndexFolder, filenames.length);
+        CompactHashSet<LightString> tokensMap =
+                CompactHashSet.read(Util.basePath + "allTokens.chsls", new StringTranslator());
         LightString[] tokens = toArray(tokensMap);
         tokensMap = null;
 
-        for (int i=0; i<fileIds.length; i+=5) {
+        for (int i = 0; i < filenames.length; i += n) {
             logger.debug("i={}", i);
-            CompactHashMap<LightString, CompactHashMap<Integer, byte[]>>[] maps = new CompactHashMap[5];
-            for (int j=0; j<5; j++) {
-                int ind = i+j;
-                byte[] mapAsBytes = IO.read(pathToPos + fileIds[ind]);
-                maps[j] = CompactHashMap.deserialize(mapAsBytes, new StringPositionsMapTranslator());
-            }
+            final int i0 = i;
+            final StringPositionsMap[] maps = new StringPositionsMap[n];
+            ParallelFor.par(j -> {
+                int ind = i0 + j;
+                maps[j] = new StringPositionsMap(Util.positionIndexFolder + filenames[ind]);
+                logger.info("maps[{}] written", j);
+            }, 0, n);
             logger.info("try join");
-            CompactHashMap<LightString, CompactHashMap<Integer, byte[]>> res = CompactHashMap.join(tokens, maps);
-            maps = null;
-            byte[] resAsBytes = res.serialize();
+            StringPositionsMap res = StringPositionsMap.join(tokens, maps);
+            res.write(Util.basePath + filenames[i] + "MainN");
             res = null;
-            IO.write(resAsBytes, pathToPos10 + fileIds[i]);
-            resAsBytes = null;
         }
     }
 
@@ -102,41 +80,32 @@ public class PositionsIndex {
         return a;
     }
 
-    public static void writePositionsBy100000Articles() throws Exception {
-        TextArticleIterator textArticleIterator = new TextArticleIterator();
-        logger.debug("article iteratoc created");
-        Iterator<Page> articleIterator = textArticleIterator.articleTextIterator();
-        int step = 100000;
-        int until = step;
-
-        for (int from = 0; articleIterator.hasNext(); from += step, until += step) {
-            Map<LightString, CompactHashMap<Integer, byte[]>> local =
-                    positionsAtRangeOf100000Pages(articleIterator, from, until);
-            if (articleIterator.hasNext()) {
-                logger.info("has next. from: {}, until: {}", from, until);
-            } else {
-                logger.warn("hasn't next. from: {}, until: {}", from, until);
-            }
-            CompactHashMap<LightString, CompactHashMap<Integer, byte[]>> compact =
-                    new CompactHashMap<>(new StringPositionsMapTranslator());
+    public static void writePositionsByFileArticles() {
+        logger.debug("article iterator created");
+        String[] files = new File(Util.textPath).list();
+        Arrays.sort(files);
+        ParallelFor.par(i -> {
+            String filename = files[i];
+            Iterator<Page> iterator = TextArticleIterator.articleTextIterator(Util.textPath + filename);
+            Map<LightString, CompactHashMap<Integer, byte[]>> local = positions(iterator);
+            StringPositionsMap compact = new StringPositionsMap();
             compact.putAll(local);
-            byte[] map = compact.serialize();
-            IO.write(map, "/home/mikhail/pos100000/" + from);
-            logger.debug("success");
-        }
+            compact.write(Util.positionIndexFolder + filename);
+            logger.debug("success: {}", filename);
+        }, 0, files.length);
     }
 
-    public static Map<LightString, CompactHashMap<Integer, byte[]>> positionsAtRangeOf100000Pages(
-            Iterator<Page> textArticleIterator, int from, int until) {
+    private static Map<LightString, CompactHashMap<Integer, byte[]>> positions(
+            Iterator<Page> textArticleIterator) {
         Map<LightString, CompactHashMap<Integer, byte[]>> local = new HashMap<>();
 
-        for (int i = from; i < until & textArticleIterator.hasNext(); i++) {
+        while (textArticleIterator.hasNext()) {
             Page next = textArticleIterator.next();
             logger.trace("docId={}", next.getId());
             String articleText = next.getContent();
             Map<LightString, List<Integer>> positions = positionsAtPage(articleText);
             logger.trace("positions map is ready. size: {}", positions.size());
-            final CompactHashMap<LightString, byte[]> compressedPositions = new CompactHashMap<>(new StringBytesTranslator());
+            final StringBytesMap compressedPositions = new StringBytesMap();
             positions.forEach((k, v) -> {
                 int[] ar = Ints.toArray(v);
                 byte[] comp = Compressor.compressVbWithoutMemory(ar);
@@ -154,16 +123,16 @@ public class PositionsIndex {
                     local.put(k, map);
                 }
             });
-            logger.trace("compact map writen to local map");
+            logger.trace("compact map written to local map");
         }
 
         return local;
     }
 
-    public static Map<LightString, List<Integer>> positionsAtPage(String articleText) {
+    private static Map<LightString, List<Integer>> positionsAtPage(String articleText) {
         Map<LightString, List<Integer>> res = new HashMap<>();
-        Matcher wordMatcher = wordPattern.matcher(articleText);
-        Matcher splitMatcher = splitPattern.matcher(articleText);
+        Matcher wordMatcher = Util.wordPattern.matcher(articleText);
+        Matcher splitMatcher = Util.splitPattern.matcher(articleText);
         int currentIndex = 0;
         while (currentIndex < articleText.length()) {
             int start = indexOf(wordMatcher, currentIndex);
@@ -189,20 +158,7 @@ public class PositionsIndex {
         return res;
     }
 
-    private Map<LightString, Integer> createWordCountMap(String text) {
-        Map<LightString, Integer> wordCountMap = new HashMap<>();
-        String[] words = Util.splitJavaPattern.split(text);
-        for (String word : words) {
-            String norm = Util.normalize(word);
-            if (Util.searchable(norm)) {
-                LightString lightString = new LightString(norm);
-
-            }
-        }
-        return wordCountMap;
-    }
-
-    public static int indexOf(Matcher matcher, int fromIndex) {
+    private static int indexOf(Matcher matcher, int fromIndex) {
         return matcher.find(fromIndex) ? matcher.start() : -1;
     }
 }

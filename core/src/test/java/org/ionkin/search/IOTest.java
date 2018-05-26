@@ -60,13 +60,6 @@ public class IOTest {
         assertTrue(Arrays.equals(ar1, ar2));
     }
 
-//    @Test
-    public void speed() throws IOException {
-        long s = System.currentTimeMillis();
-        IO.read("/media/mikhail/Windows/Users/Misha/workspace/wiki-bz2/joined1000Index/compressed");
-        System.err.println(System.currentTimeMillis() - s);
-    }
-
     @Test
     public void putStringWithLength() {
         String s = "abcd";

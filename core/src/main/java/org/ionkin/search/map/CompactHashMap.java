@@ -24,10 +24,9 @@ package org.ionkin.search.map;
  */
 
 import com.google.common.primitives.Bytes;
-import javafx.util.Pair;
+import com.google.common.primitives.Ints;
 import org.ionkin.search.Compressor;
 import org.ionkin.search.IO;
-import org.ionkin.search.LightString;
 import org.ionkin.search.VariableByte;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,25 +38,24 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A hash table based map that stores data as byte arrays, but converts to and from regular Java objects
  * on the fly at each query. Requires a translator object for additional functionality.
  */
-public final class CompactHashMap<K, V> extends AbstractMap<K, V> implements Serializable {
+public class CompactHashMap<K, V> extends AbstractMap<K, V> implements Serializable {
 
     private static final Logger logger = LoggerFactory.getLogger(CompactHashMap.class);
     private static final long serialVersionUID = 5655781679295793975L;
     /*---- Fields ----*/
 
-    private byte[][] table;  // Length is always a power of 2. Each element is either null, tombstone, or data. At least one element must be null.
+    protected byte[][] table;  // Length is always a power of 2. Each element is either null, tombstone, or data. At least one element must be null.
     private int lengthBits;  // Equal to log2(table.length)
     private int size;        // Number of items stored in hash table
     private int filled;      // Items plus tombstones; 0 <= size <= filled < table.length
     private int version;
     private final double loadFactor = 0.5;  // 0 < loadFactor < 1
-    private final CompactMapTranslator<K, V> translator;
+    protected final CompactMapTranslator<K, V> translator;
 
     /*---- Constructors ----*/
 
@@ -69,66 +67,15 @@ public final class CompactHashMap<K, V> extends AbstractMap<K, V> implements Ser
         clear();
     }
 
-    /**
-     * @author M. Ionkin
-     */
-    public static CompactHashMap<LightString, CompactHashMap<Integer, byte[]>> join(
-            LightString[] words, CompactHashMap<LightString, CompactHashMap<Integer, byte[]>>[] maps) {
-        CompactHashMap<LightString, CompactHashMap<Integer, byte[]>> res =
-                new CompactHashMap<>(new StringPositionsMapTranslator());
-        for (LightString word : words) {
-            // join positions for one word
-            Map<Integer, byte[]> articleIdPositionsMap = new HashMap<>();
-            for (CompactHashMap<LightString, CompactHashMap<Integer, byte[]>> map : maps) {
-                Map<Integer, byte[]> articleIdPositionsMapLocal = map.get(word);
-                if (articleIdPositionsMapLocal != null) {
-                    articleIdPositionsMap.putAll(articleIdPositionsMapLocal);
-                }
-            }
-
-            CompactHashMap<Integer, byte[]> compact = new CompactHashMap<>(new IntBytesTranslator());
-            compact.putAll(articleIdPositionsMap);
-            articleIdPositionsMap = null;
-            if (!compact.isEmpty()) {
-                res.put(word, compact);
-            }
-        }
-        return res;
+    public CompactHashMap(CompactMapTranslator<K, V> trans, byte[] mapAsBytes) {
+        this(trans);
+        fastDeserialization(mapAsBytes);
     }
 
-    /**
-     * @author M. Ionkin
-     */
-    public static CompactHashMap<LightString, byte[]> joinStringBytesMap(LightString[] words,
-                                                                         CompactHashMap<LightString, byte[]>[] maps) {
-        CompactHashMap<LightString, byte[]> res = new CompactHashMap<>(new StringBytesTranslator());
-        for (LightString word : words) {
-            // join index for one word
-            int size = 0;
-            List<int[]> list = new LinkedList<>();
-            for (CompactHashMap<LightString, byte[]> map : maps) {
-                byte[] ar = map.get(word);
-                if (ar != null) {
-                    int[] src = Compressor.decompressVb(ar);
-                    list.add(src);
-                    size += src.length;
-                }
-            }
-            int[] buf = new int[size];
-            AtomicInteger ai = new AtomicInteger(0);
-            list.forEach(ar -> {
-                System.arraycopy(ar, 0, buf, ai.get(), ar.length);
-                ai.addAndGet(ar.length);
-            });
-
-            if (size != 0) {
-                byte[] compact = Compressor.compressVbWithoutMemory(buf);
-                res.put(word, compact);
-            }
-        }
-        return res;
+    public CompactHashMap(CompactMapTranslator<K, V> trans, String filename) throws IOException {
+        this(trans);
+        read(filename);
     }
-
 
     /**
      * @author M. Ionkin
@@ -137,181 +84,110 @@ public final class CompactHashMap<K, V> extends AbstractMap<K, V> implements Ser
         long size = 0;
         for (int i = 0; i < table.length; i++) {
             if (table[i] != null) {
-                size += table[i].length + VariableByte.compressedLengthOfLength(table[i]);
+                size += table[i].length + VariableByte.compressedLength(table[i].length);
             }
         }
         return size;
     }
 
-    /**
-     * @author M. Ionkin
-     */
-    public byte[] serialize() {
-        long size = sizeOfTableWithLength();
+    public void write(String filename) throws IOException {
+        List<Integer> notNullIndex = new ArrayList<>();
+        for (int i=0; i<table.length; i++) if (table[i] != null) notNullIndex.add(i);
+        int[] ar = Ints.toArray(notNullIndex);
+        byte[] compAr = Compressor.compressVbWithMemory(ar);
+        long sizeOfTable = sizeOfTableWithLength();
+        long size = sizeOfTable + compAr.length + 20;
+        logger.info("try serialize {}", this);
+
         if (size < Integer.MAX_VALUE) {
-            byte[] result = new byte[(int) size];
-            int pos = 0;
-            for (int i = 0; i < table.length; i++) {
-                if (table[i] != null) {
-                    IO.putArrayBytesWithLength(result, table[i], pos);
-                    pos += VariableByte.compressedLengthOfLength(table[i]) + table[i].length;
+            // TODO: may be exclude file for this?
+            try (FileChannel rwChannel = new RandomAccessFile(filename, "rw").getChannel()) {
+                ByteBuffer wrBuf = rwChannel.map(FileChannel.MapMode.READ_WRITE, 0, size);
+                wrBuf.putInt(this.size);
+                wrBuf.putInt(this.version);
+                wrBuf.putInt(this.filled);
+                wrBuf.putInt(this.lengthBits);
+                wrBuf.putInt(compAr.length);
+                wrBuf.put(compAr);
+                for (int i : ar) {
+                    wrBuf.put(Bytes.toArray(VariableByte.compress(table[i].length)));
+                    wrBuf.put(table[i]);
+                    table[i] = null;
                 }
             }
-            return result;
         } else {
             throw new NotImplementedException();
         }
     }
 
-    /**
-     * @author M. Ionkin
-     */
-    public static <K, V> CompactHashMap<K, V> deserialize(byte[] mapAsBytes, CompactMapTranslator<K, V> translator) {
-        CompactHashMap<K, V> res = new CompactHashMap<>(translator);
-        int pos = 0;
-        while (pos < mapAsBytes.length) {
-            int packedLength = VariableByte.uncompressFirst(mapAsBytes, pos);  // TODO
-            int lengthOfPackedLength = VariableByte.compressedLength(packedLength);
-            byte[] packed = new byte[packedLength];
-            System.arraycopy(mapAsBytes, pos + lengthOfPackedLength, packed, 0, packedLength);
-            pos += lengthOfPackedLength + packedLength;
-            K key = translator.deserializeKey(packed);
-            V value = translator.deserializeValue(packed);
-            res.put(key, value);
-        }
-
-        return res;
-    }
-
-    /**
-     * @author M. Ionkin
-     */
-    public void write(String filename) throws IOException {
-        long size = sizeOfTableWithLength();
+    public byte[] fastSerialization() {
+        List<Integer> notNullIndex = new ArrayList<>();
+        for (int i=0; i<table.length; i++) if (table[i] != null) notNullIndex.add(i);
+        int[] ar = Ints.toArray(notNullIndex);
+        byte[] compAr = Compressor.compressVbWithMemory(ar);
+        long sizeOfTable = sizeOfTableWithLength();
+        long size = sizeOfTable + compAr.length + 20;
         if (size < Integer.MAX_VALUE) {
-            logger.info("try write to {}", filename);
-            //IO.write(serialize(), filename);
-            try (FileChannel rwChannel = new RandomAccessFile(filename, "rw").getChannel()) {
-                ByteBuffer wrBuf = rwChannel.map(FileChannel.MapMode.READ_WRITE, 0, size);
-                for (int i = 0; i < table.length; i++) {
-                    if (table[i] != null) {
-                        write(wrBuf, table[i]);
-                        table[i] = null;
-                    }
-                    if (i % 300000 == 0) {
-                        logger.info("gc. i={}", i);
-                        System.gc();
-                    }
-                }
+            byte[] content = new byte[(int)size];
+            IO.putInt(content, this.size, 0);
+            IO.putInt(content, this.version, 4);
+            IO.putInt(content, this.filled, 8);
+            IO.putInt(content, this.lengthBits, 12);
+            IO.putInt(content, compAr.length, 16);
+            System.arraycopy(compAr, 0, content, 20, compAr.length);
+            int pos = 20 + compAr.length;
+            for (int i : ar) {
+                IO.putArrayBytesWithLength(content, table[i], pos);
+                pos += VariableByte.compressedLengthOfLength(table[i]) + table[i].length;
             }
-        } else {
-            write(filename, 10);
-        }
+            return content;
+        } else throw new NotImplementedException();
     }
 
-    private void write(ByteBuffer wrBuf, byte[] kvp) {
-        ArrayList<Byte> lengthComp = VariableByte.compress(kvp.length);
-        byte[] ar = Bytes.toArray(lengthComp);
-        wrBuf.put(ar);
-        wrBuf.put(kvp);
-    }
-
-    // TODO: it is bad code, but work. Now I don't have time to fix worked code
-    // You can use indicesAndSizeOfNthGb to fix it
-
-    /**
-     * @author M. Ionkin
-     */
-    public void write(String filename, int block) throws IOException {
-        long startPos = 0;
-        try (FileChannel rwChannel = new RandomAccessFile(filename, "rw").getChannel()) {
-            for (int p = 0; p < 10; p++) {
-                int tableInd = p * (table.length / 10);
-                int tableIndEnd = Math.min((p + 1) * (table.length / 10), table.length);
-
-                long bytesSize = 0;
-                for (int i = tableInd; i < tableIndEnd; i++) {
-                    if (table[i] != null) {
-                        bytesSize += table[i].length + 4;
-                    }
-                }
-
-                ByteBuffer wrBuf = rwChannel.map(FileChannel.MapMode.READ_WRITE, startPos, bytesSize);
-                for (int i = tableInd; i < tableIndEnd; i++) {
-                    if (table[i] != null) {
-                        wrBuf.putInt(table[i].length);
-                        wrBuf.put(table[i]);
-                    }
-                }
-
-                startPos += bytesSize;
-            }
-        }
-    }
-
-    /**
-     * @author M. Ionkin
-     */
-    public static <K, V> CompactHashMap<K, V> read(String filename, CompactMapTranslator<K, V> trans)
-            throws IOException {
+    public void read(String filename) throws IOException {
         try (final FileChannel readChannel = new RandomAccessFile(filename, "r").getChannel()) {
             final long fileLength0 = readChannel.size();
+            logger.info("read from {}. fileLength0={}", filename, fileLength0);
             if (fileLength0 < Integer.MAX_VALUE) {
                 final ByteBuffer readBuffer = readChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileLength0);
-                final byte[] content = new byte[(int) fileLength0];
-                readBuffer.asReadOnlyBuffer().get(content);
-                return deserialize(content, trans);
-                // TODO: it is bad code, but work. Now I don't have time to fix worked code
-                // You can use indicesAndSizeOfNthGb to fix it
-            } else {
-                final CompactHashMap<K, V> map = new CompactHashMap<>(trans);
-                long startPos = 0;
-                while (startPos < fileLength0) {
-                    final int sizeOfPart = (int) Math.min(1 << 28, fileLength0 - startPos);
-                    logger.debug("current start position: {}. length to read: {}", startPos, sizeOfPart);
+                this.size = readBuffer.getInt();
+                this.version = readBuffer.getInt();
+                this.filled = readBuffer.getInt();
+                this.lengthBits = readBuffer.getInt();
+                this.table = new byte[1 << lengthBits][];
 
-                    final ByteBuffer readBuffer = readChannel.map(FileChannel.MapMode.READ_ONLY, startPos, sizeOfPart);
-                    final byte[] partOfFile = new byte[sizeOfPart];
-                    readBuffer.asReadOnlyBuffer().get(partOfFile);
-                    logger.debug("content is readed. size: {}", partOfFile.length);
+                int compArLength = readBuffer.getInt();
+                byte[] compAr = new byte[compArLength];
+                readBuffer.get(compAr);
 
-                    int positionAtPart = 0;
-                    boolean isError = false;
-                    while (positionAtPart < sizeOfPart) {
-                        int packedLength;
-                        try {
-                            packedLength = IO.readInt(partOfFile, positionAtPart);
-                        } catch (Exception e) {
-                            logger.warn("can't read packedLength. positionAtPart: " + positionAtPart);
-                            isError = true;
-                            startPos += positionAtPart;
-                            break;
-                        }
-                        positionAtPart += 4;
-
-                        try {
-                            byte[] packed = new byte[packedLength];
-                            System.arraycopy(partOfFile, positionAtPart, packed, 0, packedLength);
-                            K key = trans.deserializeKey(packed);
-                            V value = trans.deserializeValue(packed);
-                            map.put(key, value);
-                        } catch (Exception e) {
-                            logger.warn("can't read packed. positionAtPart: " + positionAtPart
-                                    + ". packedLength=" + packedLength);
-                            isError = true;
-                            startPos += positionAtPart - 4;
-                            break;
-                        }
-                        positionAtPart += packedLength;
-                    }
-
-                    if (!isError) {
-                        startPos += sizeOfPart;
-                    }
+                int[] ar = Compressor.decompressVb(compAr);
+                for (int ind : ar) {
+                    int length = VariableByte.uncompressFirst(readBuffer);
+                    table[ind] = new byte[length];
+                    readBuffer.get(table[ind]);
                 }
-
-                return map;
+            } else {
+                throw new NotImplementedException();
             }
+        }
+    }
+
+    public void fastDeserialization(byte[] content) {
+        this.size = IO.readInt(content, 0);
+        this.version = IO.readInt(content, 4);
+        this.filled = IO.readInt(content, 8);
+        this.lengthBits = IO.readInt(content,12);
+        this.table = new byte[1 << lengthBits][];
+        int compArLength = IO.readInt(content, 16);
+        byte[] compAr = Arrays.copyOfRange(content, 20, 20 + compArLength);
+        int[] ar = Compressor.decompressVb(compAr);
+        int pos = 20 + compAr.length;
+
+        for (int ind : ar) {
+            int length = VariableByte.uncompressFirst(content, pos);
+            pos += VariableByte.compressedLength(length);
+            table[ind] = Arrays.copyOfRange(content, pos, pos + length);
+            pos += length;
         }
     }
 
@@ -397,7 +273,7 @@ public final class CompactHashMap<K, V> extends AbstractMap<K, V> implements Ser
     /*---- Helper methods ----*/
 
     // Returns either a match index (non-negative) or the bitwise complement of the first empty slot index (negative).
-    private int probe(K key) {
+    protected int probe(K key) {
         final int lengthMask = table.length - 1;
         final int hash = translator.getHash(key);
         final int initIndex = hash & lengthMask;
@@ -441,7 +317,6 @@ public final class CompactHashMap<K, V> extends AbstractMap<K, V> implements Ser
             resize(newLen);
         }
     }
-
 
     private void decrementSize() {
         size--;
@@ -637,6 +512,33 @@ public final class CompactHashMap<K, V> extends AbstractMap<K, V> implements Ser
             }
 
         }
+    }
 
+    @Override
+    public String toString() {
+        List<Integer> nonNull = new ArrayList<>();
+        int ind = 0;
+        for (int i=0; i<10; i++) {
+            while (table[ind] == null) ind++;
+            nonNull.add(ind);
+            ind++;
+        }
+        ind = table.length - 1;
+        for (int i=0; i<10; i++) {
+            while (table[ind] == null) ind--;
+            nonNull.add(ind);
+            ind--;
+        }
+        ind = nonNull.stream().max(Integer::compare).get();
+        return "CompactHashMap{" +
+                "nonNull=" + Arrays.toString(Ints.toArray(nonNull)) +
+                ", table[" + ind + "]=" + Arrays.toString(table[ind]) +
+                ", lengthBits=" + lengthBits +
+                ", size=" + size +
+                ", filled=" + filled +
+                ", version=" + version +
+                ", loadFactor=" + loadFactor +
+                ", translator=" + translator +
+                '}';
     }
 }

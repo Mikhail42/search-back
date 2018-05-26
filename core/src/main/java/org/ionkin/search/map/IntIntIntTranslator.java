@@ -14,7 +14,7 @@ public class IntIntIntTranslator extends IntTranslator<Pair<Integer, Integer>> i
 
     @Override
     public Pair<Integer, Integer> deserializeValue(byte[] packed) {
-        int[] ar = VariableByte.uncompress(packed);
+        int[] ar = VariableByte.uncompress(packed, 3);
         return new Pair<>(ar[1], ar[2]);
     }
 }

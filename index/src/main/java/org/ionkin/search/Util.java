@@ -8,19 +8,22 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 public class Util {
-    static final String basePath = "/media/mikhail/Windows/Users/Misha/workspace/wiki-bz2/";
+    public static final String basePath = "C:/Users/Misha/workspace/wiki-bz2/";
+    public static final String indexFolder = basePath + "index/";
+    public static final String positionIndexFolder = basePath + "posindex/";
+    public static final String indexPath = basePath + "allIndex.lsbytesFast";
+    public static final String textPath = basePath + "text/";
+    public static final String positionsPath = basePath + "joinAll";
 
-    static final String xmlFileName = "/media/mikhail/Windows/Users/Misha/Downloads" +
-            "/ruwiki-20180201-pages-articles-multistream.xml" +
-            "/ruwiki-20180201-pages-articles-multistream.xml";
-
-    public static final Splitter splitPattern = Splitter.onPattern("[^\\p{L}\\p{N}\u0301-]+");
-    public static final Pattern splitJavaPattern = Pattern.compile("[^\\p{L}\\p{N}\u0301-]+");
+    public static final String wordSymbol = "\\p{L}\u0301-";
+    public static final Splitter splitPatternLazy = Splitter.onPattern("[^" + wordSymbol + "]+");
+    public static final Pattern splitPattern = Pattern.compile("[^" + wordSymbol + "]+");
+    public static final Pattern wordPattern = Pattern.compile("[" + wordSymbol + "]+");
 
     public static final Locale RU = new Locale("RU");
 
     public static Set<LightString> lightStrings(String pageContent) {
-        Iterable<String> words = splitPattern.split(pageContent);
+        Iterable<String> words = splitPatternLazy.split(pageContent);
         Set<LightString> lightStrings = new HashSet<>();
         for (String word : words) {
             String normal = normalize(word);

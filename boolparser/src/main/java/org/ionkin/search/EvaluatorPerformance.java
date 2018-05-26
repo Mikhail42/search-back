@@ -1,12 +1,13 @@
 package org.ionkin.search;
 
-import org.ionkin.search.map.CompactHashMap;
+import org.ionkin.search.map.StringBytesMap;
 import org.scijava.parse.ExpressionParser;
 import org.scijava.parse.SyntaxTree;
 import org.scijava.parse.Token;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -17,10 +18,24 @@ import java.util.regex.Pattern;
 public class EvaluatorPerformance {
     private static Logger logger = LoggerFactory.getLogger(EvaluatorPerformance.class);
 
-    private final CompactHashMap<LightString, byte[]> index;
+    private final StringBytesMap index;
     private final int[] allIds;
 
-    public EvaluatorPerformance(CompactHashMap<LightString, byte[]> index, int[] allIds) {
+    public static void main(String... args) throws Exception {
+        EvaluatorPerformance evaluator = load();
+        int[] res = evaluator.evaluate("Русь"/*"\"Киевская Русь\" || 19 век"*/, 50);
+        logger.info(Arrays.toString(res));
+    }
+
+    public static EvaluatorPerformance load() throws IOException {
+        byte[] docsAsBytes = IO.read(Util.basePath + "docids.chsi");
+        int[] allIds = Compressor.decompressVb(docsAsBytes);
+
+        StringBytesMap index = new StringBytesMap(Util.indexPath + "New");
+        return new EvaluatorPerformance(index, allIds);
+    }
+
+    public EvaluatorPerformance(StringBytesMap index, int[] allIds) {
         this.index = index;
         this.allIds = allIds;
         logger.debug("Evaluator created");
@@ -36,16 +51,23 @@ public class EvaluatorPerformance {
         logger.debug("start evaluate '{}'", query);
         String normalized = Normalizer.normalize(query);
         logger.debug("normalized '{}'", normalized);
-        Pattern p = Pattern.compile("(/w)/s(/w)");
-        Matcher m = p.matcher(normalized);
-        if (m.find()) {
-            normalized = m.replaceAll("$1 && $2");
+        normalized = normalized.replaceAll("[\\s]*/[\\s]*[\\d]+[\\s]*", " ").trim();
+        logger.debug("normalized without quotation digit: '{}'", normalized);
+        Matcher quoteMatcher = Pattern.compile("\"(.*)\"").matcher(normalized);
+        if (quoteMatcher.find()) {
+            normalized = quoteMatcher.replaceAll("($1)");
         }
+        logger.debug("normalized after replace quotations on round brace: '{}'", normalized);
+        String normalized1 = normalized.replaceAll(" ", " && ");
+        String normalized2 = normalized1.replaceAll("[&]{2,2} [|]{2,2}", "||");
+        String normalized3 = normalized2.replaceAll("[|]{2,2} [&]{2,2}", "||");
+        normalized = normalized3.replaceAll("[&]{2,2} [&]{2,2} [&]{2,2}", "&&");
         logger.debug("new normalized '{}'", normalized);
         String toExpr = normalized
                 .replaceAll("[|]{2,2}", "+")
                 .replaceAll("[&]{2,2}", "*")
                 .replaceAll("[!]", "-");
+
         logger.debug("expression '{}'", toExpr);
         return new ExpressionParser().parseTree(toExpr);
     }
@@ -85,12 +107,7 @@ public class EvaluatorPerformance {
 
     int[] get(LightString token, int count) {
         logger.debug("token: {}", token);
-        byte[] comp = index.get(token);
-        if (comp == null) {
-            return new int[0];
-        }
-        int[] res = Compressor.decompressVb(comp);
-        return Arrays.copyOf(res, count);
+        return index.get(token, count);
     }
 
     static int[] or(int[] ar1, int[] ar2, int count) {

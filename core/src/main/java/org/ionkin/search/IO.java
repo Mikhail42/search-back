@@ -10,6 +10,7 @@ import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class IO {
@@ -107,6 +108,12 @@ public class IO {
             res[pos + i] = lengthComp.get(i);
         }
         System.arraycopy(part, 0, res, pos + lengthComp.size(), part.length);
+    }
+
+    public static byte[] readArrayBytesWithLength(byte[] src, int pos) {
+        int length = VariableByte.uncompressFirst(src, pos);
+        pos += VariableByte.compressedLength(length);
+        return Arrays.copyOfRange(src, pos, pos + length);
     }
 
     public static void putArrayIntWithLength(ByteBuffer wrBuf, int[] ar) {

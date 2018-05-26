@@ -55,8 +55,8 @@ public class StringPositionsMapTranslator extends StringTranslator<CompactHashMa
         return uncompress(map);
     }
 
-    private CompactHashMap<Integer, byte[]> uncompress(byte[] mapAsBytes) {
-        CompactHashMap<Integer, byte[]> map = new CompactHashMap<>(new IntBytesTranslator());
+    private IntBytesMap uncompress(byte[] mapAsBytes) {
+        IntBytesMap map = new IntBytesMap();
         int pos = 0;
         int prevKey = 0;
         while (pos < mapAsBytes.length) {

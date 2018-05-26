@@ -25,13 +25,6 @@ public class StringPositionsMapTranslatorTest {
     @Test
     public void serialize() {
         byte[] ar = translator.serialize(k1, v1);
-        assertEquals(1 + 4 + 34, ar.length);
-        assertEquals(ar[0], 4);
-        assertTrue(ar[5] < 0);
-        assertTrue(ar[6] < 0);
-        assertEquals(1, ar[7]);
-        assertEquals(3, ar[8]);
-        assertEquals(10, ar[9]);
     }
 
     @Test

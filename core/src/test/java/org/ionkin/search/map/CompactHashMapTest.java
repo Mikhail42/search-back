@@ -1,6 +1,5 @@
 package org.ionkin.search.map;
 
-import junit.framework.TestCase;
 import org.ionkin.search.Compressor;
 import org.ionkin.search.LightString;
 
@@ -37,7 +36,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.UnsupportedEncodingException;
 
-import org.ionkin.search.VariableByte;
 import org.junit.Test;
 
 public class CompactHashMapTest {
@@ -54,12 +52,12 @@ public class CompactHashMapTest {
         String filename = file.getAbsolutePath();
 
         CompactHashMap<LightString, byte[]> map = new CompactHashMap<>(translator);
-
         byte[] ar = new byte[]{1, 5, 9, 3, 2};
         map.put(new LightString("мама"), ar);
         map.write(filename);
 
-        CompactHashMap<LightString, byte[]> map2 = CompactHashMap.read(filename, translator);
+        StringBytesMap map2 = new StringBytesMap();
+        map2.read(filename);
         assertTrue(Arrays.equals(ar, map2.get(new LightString("мама"))));
     }
 
@@ -351,7 +349,7 @@ public class CompactHashMapTest {
 
         LightString[] tokens = new LightString[]{new LightString("word"), new LightString("mir"), new LightString("mir2")};
 
-        CompactHashMap<LightString, CompactHashMap<Integer, byte[]>> res = CompactHashMap.join(tokens, new CompactHashMap[]{map1, map2});
+        StringPositionsMap res = StringPositionsMap.join(tokens, new CompactHashMap[]{map1, map2});
         res.forEach((k, v) -> {
             System.err.println(k);
             v.forEach((vk, vv) -> System.err.append(vk.toString()).append(' '));
@@ -376,6 +374,6 @@ public class CompactHashMapTest {
         ib2.put(word, Compressor.compressVbWithoutMemory(new int[]{10, 50, 103, 200}));
         LightString[] words = new LightString[] {word, mir};
 
-        CompactHashMap.joinStringBytesMap(words, new CompactHashMap[] {ib1, ib2});
+        StringBytesMap.join(words, new CompactHashMap[] {ib1, ib2});
     }
 }

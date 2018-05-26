@@ -23,7 +23,8 @@ package org.ionkin.search.set;
  *   Software.
  */
 
-import org.ionkin.search.IO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -42,6 +43,7 @@ import java.util.NoSuchElementException;
  */
 public final class CompactHashSet<E> extends AbstractSet<E> implements Serializable {
     private static final long serialVersionUID = 2285812214679679865L;
+    private static Logger logger = LoggerFactory.getLogger(CompactHashSet.class);
 
     /*---- Fields ----*/
 
@@ -75,24 +77,41 @@ public final class CompactHashSet<E> extends AbstractSet<E> implements Serializa
      */
     public static <K>CompactHashSet<K> read(String filename, CompactSetTranslator<K> trans)
             throws IOException {
-        final CompactHashSet<K> set = new CompactHashSet<K>(trans);
         try (final FileChannel readChannel = new RandomAccessFile(filename, "r").getChannel()) {
             final long fileLength0 = readChannel.size();
             final ByteBuffer readBuffer = readChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileLength0);
             final byte[] content = new byte[(int) fileLength0];
             readBuffer.asReadOnlyBuffer().get(content);
-            int pos = 0;
-            while (pos < fileLength0) {
-                int packedLength = content[pos++];
-                byte[] packed = new byte[packedLength];
-                System.arraycopy(content, pos, packed, 0, packedLength);
-                pos += packedLength;
-                K key = trans.deserialize(packed);
-                set.add(key);
-            }
+            return read(content, trans);
         }
+    }
+
+    private static <K>CompactHashSet<K> read(byte[] content, CompactSetTranslator<K> trans) {
+        logger.info("start read {}. byte length = {}", trans, content.length);
+        final CompactHashSet<K> set = new CompactHashSet<>(trans);
+        int pos = 0;
+        while (pos < content.length) {
+            int packedLength = content[pos++];
+            byte[] packed = new byte[packedLength];
+            System.arraycopy(content, pos, packed, 0, packedLength);
+            pos += packedLength;
+            K key = trans.deserialize(packed);
+            set.add(key);
+        }
+        logger.info("end read {}. byte length = {}", trans, content.length);
         return set;
     }
+/*
+    private static CompactHashSet<Integer> readWithoutLength(byte[] content, CompactSetTranslator<Integer> trans) {
+        final CompactHashSet<Integer> set = new CompactHashSet<>(trans);
+        int pos = 0;
+        while (pos < content.length) {
+            int next = VariableByte.uncompressFirst(content, pos);
+            pos += VariableByte.compressedLength(next);
+            set.add(next);
+        }
+        return set;
+    }*/
 
     /**
      * @author M. Ionkin
@@ -102,19 +121,6 @@ public final class CompactHashSet<E> extends AbstractSet<E> implements Serializa
         for (byte[] b : table) {
             if (b != null) {
                 size += b.length + 1;
-            }
-        }
-        return size;
-    }
-
-    /**
-     * @author M. Ionkin
-     */
-    public long sizeOfBytesWithoutLength() {
-        long size = 0;
-        for (byte[] b : table) {
-            if (b != null) {
-                size += b.length;
             }
         }
         return size;
