@@ -24,7 +24,7 @@ public class EvaluatorPerformance {
     private static Logger logger = LoggerFactory.getLogger(EvaluatorPerformance.class);
 
     private final int[] allIds;
-    private final StringBytesMap indexMap;
+    private final IndexMap indexMap;
     private final SearchMap positions;
 
     public static void main(String... args) throws Exception {
@@ -116,13 +116,13 @@ public class EvaluatorPerformance {
         byte[] docsAsBytes = IO.read(Util.basePath + "docids.chsi");
         int[] allIds = Compressor.decompressVb(docsAsBytes);
 
-        StringBytesMap indexMap = new StringBytesMap(Util.basePath + "index.chmsb");
+        IndexMap indexMap = new IndexMap(Util.basePath + "index.im");
         SearchMap searchMap = new SearchMap(Util.basePath + "positions.sm");
 
         return new EvaluatorPerformance(searchMap, indexMap, allIds);
     }
 
-    public EvaluatorPerformance(SearchMap positions, StringBytesMap indexMap, int[] allIds) {
+    public EvaluatorPerformance(SearchMap positions, IndexMap indexMap, int[] allIds) {
         this.indexMap = indexMap;
         this.allIds = allIds;
         this.positions = positions;
@@ -219,12 +219,11 @@ public class EvaluatorPerformance {
      * @see Logic#andQuotes
      */
     int[] andQuotes(List<LightString> words, int count, int distance) {
-        // TODO
-        int[][] wordDocIds = new int[words.size()][];
+        Index[] wordDocIds = new Index[words.size()];
         Positions[] poss = new Positions[words.size()];
         for (int i = 0; i < words.size(); i++) {
             LightString word = words.get(i);
-            wordDocIds[i] = this.get(word, Integer.MAX_VALUE);
+            wordDocIds[i] = indexMap.get(word);
             poss[i] = positions.get(word);
         }
         return Logic.andQuotes(wordDocIds, poss, count, distance);
@@ -242,8 +241,8 @@ public class EvaluatorPerformance {
 
     int[] get(LightString token, int count) {
         logger.trace("token: {}", token);
-        BytesRange range = indexMap.get(token);
-        return Compressor.decompressVb(range, count);
+        Index index = indexMap.get(token);
+        return index.getIndex(count);
     }
 
     private List<Object> allTokens(SyntaxTree tree) {
