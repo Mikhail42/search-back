@@ -1,17 +1,20 @@
 package org.ionkin.search;
 
-import org.ionkin.search.map.StringPositionsMap;
+import org.ionkin.search.map.IntBytesMap;
+
+import java.util.Iterator;
+import java.util.Map;
 
 public class Main {
     public static void main(String... args) throws Exception {
-        /*CompactHashMap<Integer, Pair<Integer, Integer>> map =
-                CompactHashMap.read(Util.basePath + "docPositions.chmiiiFast", new IntIntIntTranslator());
-        int[] docids = Ints.toArray(map.keySet());
-        Arrays.sort(docids);
-        IO.write(Compressor.compressVbWithoutMemory(docids), Util.basePath +  "docids.chsi");*/
-        //CompactHashMap<LightString, CompactHashMap<Integer, byte[]>> index = CompactHashMap.read(Util.positionsPath, new StringPositionsMapTranslator());
-        //index.write(Util.positionsPath + "Fast");
-        //StringPositionsMap index = new StringPositionsMap();
-        //index.read(Util.positionsPath + "Fast");
+        Iterator<Page> iterator = TextArticleIterator.articleTextIterator(Util.basePath + "testText.txt");
+        //Page ilichPage = iterator.next();
+        //Map<LightString, List<Integer>> positions = PositionsIndex.positionsAtPage(ilichPage.getContent());
+        Map<LightString, IntBytesMap> local = PositionsIndex.positions(iterator);
+        IntBytesMap ibm = local.get(new LightString("война"));
+        BytesRange range = ibm.get(256);
+        int[] ids256 = Compressor.decompressVb(range);
+        //int[] ids = Ints.toArray(positions.get(new LightString("война")));
+        int a = 5;
     }
 }

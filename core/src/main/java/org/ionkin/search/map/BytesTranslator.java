@@ -1,6 +1,6 @@
 package org.ionkin.search.map;
 
-import org.ionkin.search.SearchUtil;
+import org.ionkin.search.Util;
 import org.ionkin.search.VariableByte;
 
 import java.util.Arrays;
@@ -13,7 +13,7 @@ public abstract class BytesTranslator<V> implements CompactMapTranslator<byte[],
 
     @Override
     public int getHash(byte[] key) {
-        return SearchUtil.hashCode(key);
+        return Util.hashCode(key);
     }
 
     @Override

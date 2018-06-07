@@ -32,7 +32,20 @@ public class LightString implements Serializable {
 
     @Override
     public int hashCode() {
-        return SearchUtil.hashCode(bytes);
+        return Util.hashCode(bytes);
+    }
+
+    /**
+     * @param from the initial index of the range to be copied, inclusive
+     * @param until the final index of the range to be copied, exclusive.
+     *              (This index may lie outside the array.)
+     */
+    public LightString substring(int from, int until) {
+        return new LightString(Arrays.copyOfRange(bytes, from, until));
+    }
+
+    public LightString substring(int from) {
+        return new LightString(Arrays.copyOfRange(bytes, from, bytes.length));
     }
 
     public byte[] getBytes() {
@@ -46,27 +59,32 @@ public class LightString implements Serializable {
     private static String ruEnDigits(byte[] bytes) {
         char[] chars = new char[bytes.length];
         for (int i = 0; i < bytes.length; i++) {
-            byte b = bytes[i];
-            if (b >= ':' && b <= 90) { //90 == ':' + 32
-                // Russian А
-                chars[i] = (char) ('а' + (b - ':'));
-            } else {
-                chars[i] = (char) b;
-            }
+            chars[i] = fromByte(bytes[i]);
         }
         return new String(chars);
+    }
+
+    public boolean startWith(char c) {
+        return fromByte(bytes[0]) == c;
+    }
+
+    private static char fromByte(byte b) {
+        return (char)((b >= ':' && b <= 90)  //90 == ':' + 32
+            ? ('а' + (b - ':'))  // Russian А
+            : b);
+    }
+
+    private static byte fromChar(char c) {
+        return (byte) ((c >= 'а' && c <= 'я')
+                ? (':' + (c - 'а'))
+                : c);
     }
 
     private static byte[] ruEnDigits(String word) {
         char[] chars = word.toCharArray();
         byte[] bytes = new byte[chars.length];
         for (int i = 0; i < bytes.length; i++) {
-            char c = chars[i];
-            if (c >= 'а' && c <= 'я') {
-                bytes[i] = (byte) (':' + (c - 'а'));
-            } else {
-                bytes[i] = (byte) c;
-            }
+            bytes[i] = fromChar(chars[i]);
         }
         return bytes;
     }

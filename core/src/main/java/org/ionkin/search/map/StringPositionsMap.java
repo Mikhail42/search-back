@@ -1,61 +1,75 @@
 package org.ionkin.search.map;
 
+import org.ionkin.search.BytesRange;
 import org.ionkin.search.LightString;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class StringPositionsMap extends CompactHashMap<LightString, CompactHashMap<Integer, byte[]>> {
+public class StringPositionsMap extends CompactHashMap<LightString, IntBytesMap> {
 
     public StringPositionsMap() {
-        super(new StringPositionsMapTranslator());
+        super(new StringPositionsTranslator());
     }
 
-    public StringPositionsMap(byte[] content) {
-        super(new StringPositionsMapTranslator(), content);
+    public StringPositionsMap(byte[] mapAsBytes) {
+        super(new StringPositionsTranslator(), mapAsBytes);
+    }
+
+    public StringPositionsMap(byte[] mapAsBytes, int from) {
+        super(new StringPositionsTranslator(), mapAsBytes, from);
     }
 
     public StringPositionsMap(String filename) throws IOException {
-        super(new StringPositionsMapTranslator(), filename);
+        super(new StringPositionsTranslator(), filename);
     }
 
-    /*public BytesBytesMap asBytesBytesMap() {
-        BytesBytesMap sbMap = new BytesBytesMap();
-        StringPositionsMapTranslator translator = (StringPositionsMapTranslator) this.translator;
-        for (int i = 0; i < table.length; i++) {
-            if (table[i] != null) {
-                LightString key = translator.deserializeKey(table[i]);
-                IntBytesMap value = translator.deserializeValue(table[i]);
-                value.forEach((k, v) -> {
-                    byte[] kAsBytes = Bytes.toArray(VariableByte.compress(k));
-                    byte[] newKey = new byte[];
-                    sbMap.put(newKey, v);
-                });
-                table[i] = null;
-            }
-        }
-        return sbMap;
-    }*/
+    public static StringPositionsMap linkClone(CompactHashMap<LightString, IntBytesMap> map) {
+        StringPositionsMap clone = new StringPositionsMap();
+        clone.table = map.table;
+        clone.lengthBits = map.lengthBits;
+        clone.size = map.size;
+        clone.filled = map.filled;
+        clone.version = map.version;
+        return clone;
+    }
 
-    public static StringPositionsMap join(LightString[] words,
-                                          CompactHashMap<LightString, CompactHashMap<Integer, byte[]>>[] maps) {
+    public static void joinAtFirst(StringPositionsMap spm1, StringPositionsMap spm2) {
+        spm2.forEach((k, v) -> {
+            IntBytesMap ib1 = spm1.get(k);
+            if (ib1 != null) {
+                ib1.putAll(v);
+                spm1.put(k, ib1);
+            } else {
+                spm1.put(k, v);
+            }
+        });
+    }
+
+    public static StringPositionsMap join(LightString[] words, StringPositionsMap[] maps) {
         StringPositionsMap res = new StringPositionsMap();
         for (LightString word : words) {
             // join positions for one word
-            Map<Integer, byte[]> articleIdPositionsMap = new HashMap<>();
-            for (CompactHashMap<LightString, CompactHashMap<Integer, byte[]>> map : maps) {
-                Map<Integer, byte[]> articleIdPositionsMapLocal = map.get(word);
-                if (articleIdPositionsMapLocal != null) {
-                    articleIdPositionsMap.putAll(articleIdPositionsMapLocal);
-                }
-            }
+            Map<Integer, BytesRange> articleIdPositionsMap = joinByWord(maps, word);
 
-            CompactHashMap<Integer, byte[]> compact = new CompactHashMap<>(new IntBytesTranslator());
+            IntBytesMap compact = new IntBytesMap();
             compact.putAll(articleIdPositionsMap);
+
             articleIdPositionsMap = null;
             if (!compact.isEmpty()) {
                 res.put(word, compact);
+            }
+        }
+        return res;
+    }
+
+    public static Map<Integer, BytesRange> joinByWord(StringPositionsMap[] maps, LightString word) {
+        Map<Integer, BytesRange> res = new HashMap<>();
+        for (StringPositionsMap map : maps) {
+            Map<Integer, BytesRange> loc = map.get(word);
+            if (loc != null) {
+                res.putAll(loc);
             }
         }
         return res;

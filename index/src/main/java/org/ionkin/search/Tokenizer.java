@@ -19,7 +19,7 @@ public class Tokenizer {
         logger.info("start get tokens");
         CompactHashSet<LightString> tokens = new CompactHashSet<>(new StringTranslator());
 
-        Pattern pattern = Pattern.compile("[^\\p{L}\\p{N}\u0301-]+");
+        Pattern pattern = Util.splitPattern;
         Iterator<Page> iterator = TextArticleIterator.articleTextIterator();
 
         while (iterator.hasNext()) {
@@ -33,7 +33,7 @@ public class Tokenizer {
             }
         }
 
-        tokens.write("allTokens.chsls");
+        tokens.write(Util.dictionaryPath);
         logger.info("size: {}", tokens.size());
         logger.info("all");
     }

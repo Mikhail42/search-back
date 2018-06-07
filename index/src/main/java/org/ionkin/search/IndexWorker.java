@@ -16,15 +16,15 @@ public class IndexWorker {
 
     public static void main(String... args) throws Exception {
         logger.debug("started");
-        writeIndex();
+        //writeIndex(Util.basePath + "testText/", Util.testIndexPath);
+        writeIndex(Util.textPath, Util.indexFolder);
         joinIndex();
     }
 
     public static void joinIndex() throws IOException {
         logger.debug("try read tokens");
-        CompactHashSet<LightString> tokensMap =
-                CompactHashSet.read(Util.basePath + "allTokens.chsls", new StringTranslator());
-        final LightString[] tokens = PositionsIndex.toArray(tokensMap);
+        CompactHashSet<LightString> tokensMap = CompactHashSet.read(Util.dictionaryPath, new StringTranslator());
+        final LightString[] tokens = Util.toArray(tokensMap);
         tokensMap = null;
 
         String[] files = new File(Util.indexFolder).list();
@@ -47,14 +47,14 @@ public class IndexWorker {
         StringBytesMap map = StringBytesMap.join(tokens, mapsBy);
 
         logger.debug("try write all");
-        map.write(Util.indexPath + "New");
+        map.write(Util.indexPath + "_0526_20");
     }
 
-    public static void writeIndex() {
-        String[] files = new File(Util.textPath).list();
+    public static void writeIndex(String inDir, String outDir) {
+        String[] files = new File(inDir).list();
         ParallelFor.par(i -> {
             String file = files[i];
-            WikiParser wikiParser = new WikiParser(Util.textPath + file);
+            WikiParser wikiParser = new WikiParser(inDir + file);
 
             final Map<LightString, List<Integer>> local = new HashMap<>();
             wikiParser.getPages().forEach(page -> {
@@ -83,11 +83,13 @@ public class IndexWorker {
             StringBytesMap map = new StringBytesMap();
             local.forEach((str, list) -> {
                 int[] ar = Ints.toArray(list);
-                byte[] bytes = Compressor.compressVbWithoutMemory(ar);
-                map.put(str, bytes);
+                byte[] comp = Compressor.compressVbWithoutMemory(ar);
+                //int[] comp = Compressor.compressS9WithoutMemory(ar);
+                //byte[] bytes = IO.toBytes(comp);
+                map.put(str, new BytesRange(comp));
             });
 
-            map.write(Util.indexFolder + file);
+            map.write(outDir + file);
         }, 0, files.length);
     }
 

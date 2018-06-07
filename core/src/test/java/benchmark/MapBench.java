@@ -1,13 +1,6 @@
 package benchmark;
 
-import org.ionkin.search.IO;
-import org.ionkin.search.LightString;
-import org.ionkin.search.VariableByte;
-import org.ionkin.search.map.CompactHashMap;
-import org.ionkin.search.map.StringPositionsMapTranslator;
-
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,7 +32,7 @@ public class MapBench {
         /*long s = System.currentTimeMillis();
         String filename = "/home/mikhail/pos50000/4";
         CompactHashMap<LightString, CompactHashMap<Integer, byte[]>> map =
-                CompactHashMap.deserialize(IO.read(filename), new StringPositionsMapTranslator());
+                CompactHashMap.deserialize(IO.read(filename), new StringPositionsTranslator());
 // TODO
         AtomicLong keyLength = new AtomicLong(0);
         AtomicLong valueLength = new AtomicLong(0);

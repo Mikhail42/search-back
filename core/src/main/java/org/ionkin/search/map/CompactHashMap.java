@@ -23,7 +23,6 @@ package org.ionkin.search.map;
  *   Software.
  */
 
-import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
 import org.ionkin.search.Compressor;
 import org.ionkin.search.IO;
@@ -50,10 +49,10 @@ public class CompactHashMap<K, V> extends AbstractMap<K, V> implements Serializa
     /*---- Fields ----*/
 
     protected byte[][] table;  // Length is always a power of 2. Each element is either null, tombstone, or data. At least one element must be null.
-    private int lengthBits;  // Equal to log2(table.length)
-    private int size;        // Number of items stored in hash table
-    private int filled;      // Items plus tombstones; 0 <= size <= filled < table.length
-    private int version;
+    protected int lengthBits;  // Equal to log2(table.length)
+    protected int size;        // Number of items stored in hash table
+    protected int filled;      // Items plus tombstones; 0 <= size <= filled < table.length
+    protected int version;
     private final double loadFactor = 0.5;  // 0 < loadFactor < 1
     protected final CompactMapTranslator<K, V> translator;
 
@@ -70,6 +69,11 @@ public class CompactHashMap<K, V> extends AbstractMap<K, V> implements Serializa
     public CompactHashMap(CompactMapTranslator<K, V> trans, byte[] mapAsBytes) {
         this(trans);
         fastDeserialization(mapAsBytes);
+    }
+
+    public CompactHashMap(CompactMapTranslator<K, V> trans, byte[] mapAsBytes, int from) {
+        this(trans);
+        fastDeserialization(mapAsBytes, from);
     }
 
     public CompactHashMap(CompactMapTranslator<K, V> trans, String filename) throws IOException {
@@ -91,13 +95,13 @@ public class CompactHashMap<K, V> extends AbstractMap<K, V> implements Serializa
     }
 
     public void write(String filename) throws IOException {
+        logger.info("try write map to {}", filename);
         List<Integer> notNullIndex = new ArrayList<>();
         for (int i=0; i<table.length; i++) if (table[i] != null) notNullIndex.add(i);
         int[] ar = Ints.toArray(notNullIndex);
         byte[] compAr = Compressor.compressVbWithMemory(ar);
         long sizeOfTable = sizeOfTableWithLength();
         long size = sizeOfTable + compAr.length + 20;
-        logger.info("try serialize {}", this);
 
         if (size < Integer.MAX_VALUE) {
             // TODO: may be exclude file for this?
@@ -109,12 +113,14 @@ public class CompactHashMap<K, V> extends AbstractMap<K, V> implements Serializa
                 wrBuf.putInt(this.lengthBits);
                 wrBuf.putInt(compAr.length);
                 wrBuf.put(compAr);
+                logger.info("common info written to {}", filename);
                 for (int i : ar) {
-                    wrBuf.put(Bytes.toArray(VariableByte.compress(table[i].length)));
+                    wrBuf.put(VariableByte.compress(table[i].length));
                     wrBuf.put(table[i]);
                     table[i] = null;
                 }
             }
+            logger.info("map is written to {}", filename);
         } else {
             throw new NotImplementedException();
         }
@@ -161,11 +167,13 @@ public class CompactHashMap<K, V> extends AbstractMap<K, V> implements Serializa
                 readBuffer.get(compAr);
 
                 int[] ar = Compressor.decompressVb(compAr);
+                logger.info("Common info is read. Try read columns (size={})", size);
                 for (int ind : ar) {
                     int length = VariableByte.uncompressFirst(readBuffer);
                     table[ind] = new byte[length];
                     readBuffer.get(table[ind]);
                 }
+                logger.info("read success");
             } else {
                 throw new NotImplementedException();
             }
@@ -173,15 +181,19 @@ public class CompactHashMap<K, V> extends AbstractMap<K, V> implements Serializa
     }
 
     public void fastDeserialization(byte[] content) {
-        this.size = IO.readInt(content, 0);
-        this.version = IO.readInt(content, 4);
-        this.filled = IO.readInt(content, 8);
-        this.lengthBits = IO.readInt(content,12);
+        fastDeserialization(content, 0);
+    }
+
+    public void fastDeserialization(byte[] content, int from) {
+        this.size = IO.readInt(content, from + 0);
+        this.version = IO.readInt(content, from + 4);
+        this.filled = IO.readInt(content, from + 8);
+        this.lengthBits = IO.readInt(content,from + 12);
         this.table = new byte[1 << lengthBits][];
-        int compArLength = IO.readInt(content, 16);
-        byte[] compAr = Arrays.copyOfRange(content, 20, 20 + compArLength);
+        int compArLength = IO.readInt(content, from + 16);
+        byte[] compAr = Arrays.copyOfRange(content, from + 20, from + 20 + compArLength);
         int[] ar = Compressor.decompressVb(compAr);
-        int pos = 20 + compAr.length;
+        int pos = from + 20 + compAr.length;
 
         for (int ind : ar) {
             int length = VariableByte.uncompressFirst(content, pos);

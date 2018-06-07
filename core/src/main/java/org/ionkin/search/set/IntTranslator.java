@@ -15,7 +15,7 @@ public class IntTranslator implements CompactSetTranslator<Integer> {
 
     @Override
     public byte[] serialize(Integer obj) {
-        return VariableByte.compressToBytes(obj);
+        return VariableByte.compress(obj);
     }
 
     @Override

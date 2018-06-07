@@ -14,8 +14,8 @@ public class Main {
     static final String basePath = "/media/mikhail/Windows/Users/Misha/workspace/wiki-bz2/";
 
     public static void main(String... args) throws Exception {
-        CompactHashMap<LightString, Integer> tokens =
-                CompactHashMap.read(basePath + "freq/allTokens", new StringIntTranslator());
+        CompactHashMap<LightString, Integer> tokens = new CompactHashMap<>(new StringIntTranslator());
+        tokens.read(basePath + "freq/allTokens");
         logger.debug("file is readed");
         Collection<Integer> values = tokens.values();
         tokens = null;

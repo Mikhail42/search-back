@@ -54,13 +54,6 @@ public class IOTest {
     }
 
     @Test
-    public void testToIntsToBytes() {
-        byte[] ar1 = new byte[]{0, 0, 0, 2, 0, 0, 1, 13, 0, 0, 0, -2};
-        byte[] ar2 = IO.toBytes(IO.toInts(ar1));
-        assertTrue(Arrays.equals(ar1, ar2));
-    }
-
-    @Test
     public void putStringWithLength() {
         String s = "abcd";
         byte[] asd = s.getBytes(StandardCharsets.UTF_16);

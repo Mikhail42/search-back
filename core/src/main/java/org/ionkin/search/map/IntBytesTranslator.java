@@ -1,27 +1,24 @@
 package org.ionkin.search.map;
 
+import org.ionkin.search.ByteArray;
+import org.ionkin.search.BytesRange;
 import org.ionkin.search.VariableByte;
 
-import java.util.ArrayList;
-
-public class IntBytesTranslator extends IntTranslator<byte[]> {
+public class IntBytesTranslator extends IntTranslator<BytesRange> {
 
     @Override
-    public byte[] serialize(Integer key, byte[] value) {
-        ArrayList<Byte> keyComp = VariableByte.compress(key);
-        byte[] res = new byte[value.length + keyComp.size()];
-        for (int i = 0; i < keyComp.size(); i++) {
-            res[i] = keyComp.get(i);
-        }
-        System.arraycopy(value, 0, res, keyComp.size(), value.length);
-        return res;
+    public byte[] serialize(Integer key, BytesRange value) {
+        // key(int) value(positions)
+        byte[] keyComp = VariableByte.compress(key);
+        ByteArray res = new ByteArray(keyComp.length + value.length());
+        res.add(keyComp);
+        res.add(value);
+        return res.getAll();
     }
 
     @Override
-    public byte[] deserializeValue(byte[] packed) {
+    public BytesRange deserializeValue(byte[] packed) {
         int nextPos = VariableByte.getNextPos(packed, 0);
-        byte[] value = new byte[packed.length - nextPos];
-        System.arraycopy(packed, nextPos, value, 0, value.length);
-        return value;
+        return new BytesRange(packed, nextPos);
     }
 }

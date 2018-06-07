@@ -80,11 +80,19 @@ public class DirectIndex {
             int length = IO.readInt(bytes, pos);
             pos += 4;
             if (length != 0) {
-                titles[i] = IO.readString(bytes, pos, length);
+                titles[i] = readString(bytes, pos, length);
                 pos += length * 2;
             }
             i++;
         }
         return titles;
+    }
+
+    public static String readString(byte[] ar, int pos, int length) {
+        byte[] str = new byte[length * 2 + 2];
+        str[0] = -2;
+        str[1] = -1;
+        System.arraycopy(ar, pos, str, 2, str.length - 2);
+        return new String(str, StandardCharsets.UTF_16);
     }
 }

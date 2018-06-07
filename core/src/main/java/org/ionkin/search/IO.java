@@ -9,9 +9,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 public class IO {
     private static final Logger logger = LoggerFactory.getLogger(IO.class);
@@ -47,6 +45,24 @@ public class IO {
         }
     }
 
+    public static byte[] toBytes(IntsRange range) {
+        byte[] res = new byte[range.length() * 4];
+        int curPos = 0;
+        for (int i = 0; i < range.length(); i++) {
+            putInt(res, range.get(i), curPos);
+            curPos += 4;
+        }
+        return res;
+    }
+
+    public static void putArrayIntWithoutLength(byte[] ar, int[] part, int pos) {
+        int curPos = pos;
+        for (int a : part) {
+            putInt(ar, a, curPos);
+            curPos += 4;
+        }
+    }
+
     public static void putInt(byte[] ar, int b, int pos) {
         ar[pos] = (byte) (b >>> 24);
         ar[pos + 1] = (byte) (b >>> 16);
@@ -75,13 +91,7 @@ public class IO {
         System.arraycopy(b.getBytes(StandardCharsets.UTF_16), 2, ar, pos + 4, b.length() * 2);
     }
 
-    public static String readString(byte[] ar, int pos, int length) {
-        byte[] str = new byte[length * 2 + 2];
-        str[0] = -2;
-        str[1] = -1;
-        System.arraycopy(ar, pos, str, 2, str.length - 2);
-        return new String(str, StandardCharsets.UTF_16);
-    }
+
 
     public static LightString readString(byte[] bs, int startPos) {
         byte strLength = bs[startPos];
@@ -97,30 +107,16 @@ public class IO {
         wrBuf.put(bytes, 0, length);
     }
 
-    public static void putArrayBytesWithLength(ByteBuffer wrBuf, byte[] ar) {
-        wrBuf.putInt(ar.length);
-        wrBuf.put(ar);
-    }
-
     public static void putArrayBytesWithLength(byte[] res, byte[] part, int pos) {
-        ArrayList<Byte> lengthComp = VariableByte.compress(part.length);
-        for (int i = 0; i < lengthComp.size(); i++) {
-            res[pos + i] = lengthComp.get(i);
-        }
-        System.arraycopy(part, 0, res, pos + lengthComp.size(), part.length);
+        byte[] lengthComp = VariableByte.compress(part.length);
+        System.arraycopy(lengthComp, 0, res, pos, lengthComp.length);
+        System.arraycopy(part, 0, res, pos + lengthComp.length, part.length);
     }
 
     public static byte[] readArrayBytesWithLength(byte[] src, int pos) {
         int length = VariableByte.uncompressFirst(src, pos);
         pos += VariableByte.compressedLength(length);
         return Arrays.copyOfRange(src, pos, pos + length);
-    }
-
-    public static void putArrayIntWithLength(ByteBuffer wrBuf, int[] ar) {
-        wrBuf.putInt(ar.length);
-        for (int ind : ar) {
-            wrBuf.putInt(ind);
-        }
     }
 
     public static int[] readArrayIntWithLength(byte[] bs, int startPos) {
@@ -156,12 +152,4 @@ public class IO {
         intBuffer.put(ar);
         return buf.array();
     }
-
-    /*public static byte[] put(byte[] ar, int[] toAdd) {
-        byte[] small = toBytes(toAdd);
-        byte[] res = new byte[ar.length + small.length];
-        System.arraycopy(ar, 0, res, 0, ar.length);
-        System.arraycopy(small, 0, res, ar.length, small.length);
-        return res;
-    }*/
 }

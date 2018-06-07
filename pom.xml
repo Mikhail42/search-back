@@ -12,6 +12,8 @@
         <module>index</module>
         <module>core</module>
         <module>boolparser</module>
+        <module>parsington</module>
+        <module>lemmatization</module>
     </modules>
 
     <properties>

@@ -1,6 +1,5 @@
 package org.ionkin.search;
 
-import org.ionkin.search.VariableByte;
 import org.junit.Test;
 
 import java.util.Arrays;
