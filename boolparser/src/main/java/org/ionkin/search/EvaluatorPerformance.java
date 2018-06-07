@@ -7,7 +7,6 @@ import org.scijava.parse.Tokens;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.image.ConvolveOp;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -25,23 +24,23 @@ public class EvaluatorPerformance {
     private static Logger logger = LoggerFactory.getLogger(EvaluatorPerformance.class);
 
     private final int[] allIds;
-    private final IndexMap indexMap;
+    private final StringBytesMap indexMap;
     private final SearchMap positions;
 
     public static void main(String... args) throws Exception {
         EvaluatorPerformance evaluator = load(Util.indexPath, Util.positionsPath);
-        logger.info(Arrays.toString(evaluator.evaluate("«война и мир»", 50)));
-        logger.info(Arrays.toString(evaluator.evaluate("«1 российский фильм»", 50)));
-        logger.info(Arrays.toString(evaluator.evaluate("«Петр Великий»", 50)));
-        logger.info(Arrays.toString(evaluator.evaluate("«Двенадцать стульев»", 50)));
-        logger.info(Arrays.toString(evaluator.evaluate("«Булев поиск»", 50)));
-        logger.info(Arrays.toString(evaluator.evaluate("«об авторских правах", 50)));
-        logger.info(Arrays.toString(evaluator.evaluate("«Слово о полку Игореве", 50)));
+        logger.info(Arrays.toString(evaluator.evaluate("«об авторских правах»", 50)));
+        logger.info(Arrays.toString(evaluator.evaluate("«Слово о полку Игореве»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate(" «что  где  когда»  &&  !«хрустальная  сова»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«что  где  когда»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«что  где  когда»  /  5", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«что  где  когда»    &&    друзь", 50)));
         logger.info(Arrays.toString(evaluator.evaluate(" «что  где  когда»  ||    квн", 50)));
+        logger.info(Arrays.toString(evaluator.evaluate("«война и мир»", 50)));
+        logger.info(Arrays.toString(evaluator.evaluate("«1 российский фильм»", 50)));
+        logger.info(Arrays.toString(evaluator.evaluate("«Петр Великий»", 50)));
+        logger.info(Arrays.toString(evaluator.evaluate("«Двенадцать стульев»", 50)));
+        logger.info(Arrays.toString(evaluator.evaluate("«Булев поиск»", 50)));
     }
 
     public static EvaluatorPerformance load() throws IOException {
@@ -117,13 +116,13 @@ public class EvaluatorPerformance {
         byte[] docsAsBytes = IO.read(Util.basePath + "docids.chsi");
         int[] allIds = Compressor.decompressVb(docsAsBytes);
 
-        IndexMap indexMap = new IndexMap(Util.basePath + "index.im");
+        StringBytesMap indexMap = new StringBytesMap(Util.basePath + "index.chmsb");
         SearchMap searchMap = new SearchMap(Util.basePath + "positions.sm");
 
         return new EvaluatorPerformance(searchMap, indexMap, allIds);
     }
 
-    public EvaluatorPerformance(SearchMap positions, IndexMap indexMap, int[] allIds) {
+    public EvaluatorPerformance(SearchMap positions, StringBytesMap indexMap, int[] allIds) {
         this.indexMap = indexMap;
         this.allIds = allIds;
         this.positions = positions;
@@ -220,11 +219,12 @@ public class EvaluatorPerformance {
      * @see Logic#andQuotes
      */
     int[] andQuotes(List<LightString> words, int count, int distance) {
-        Index[] wordDocIds = new Index[words.size()];
+        // TODO
+        int[][] wordDocIds = new int[words.size()][];
         Positions[] poss = new Positions[words.size()];
         for (int i = 0; i < words.size(); i++) {
             LightString word = words.get(i);
-            wordDocIds[i] = indexMap.get(word);
+            wordDocIds[i] = this.get(word, Integer.MAX_VALUE);
             poss[i] = positions.get(word);
         }
         return Logic.andQuotes(wordDocIds, poss, count, distance);
@@ -242,8 +242,8 @@ public class EvaluatorPerformance {
 
     int[] get(LightString token, int count) {
         logger.trace("token: {}", token);
-        Index index = indexMap.get(token);
-        return index.getIndex(count);
+        BytesRange range = indexMap.get(token);
+        return Compressor.decompressVb(range, count);
     }
 
     private List<Object> allTokens(SyntaxTree tree) {
