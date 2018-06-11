@@ -1,8 +1,11 @@
 package org.ionkin.search;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import com.google.common.primitives.Ints;
+import org.ionkin.Ranking;
+import org.ionkin.search.map.IndexMap;
+import org.ionkin.search.map.SearchMap;
+
+import java.util.*;
 
 public class Logic {
 
@@ -137,6 +140,36 @@ public class Logic {
         }
 
         return res.getCopy();
+    }
+
+    static int[] rankingTfIdf(int[] docIds0, LightString[] words, SearchMap searchMap, IndexMap indexMap, int count) {
+        TreeMap<Integer, Integer> indScope = new TreeMap<>((x, y) -> Integer.compare(y, x));
+
+        int n = words.length;
+
+        byte[] idfs = new byte[n];
+        Map<LightString, Positions> wordPositionsMap = new HashMap<>();
+        for (int i = 0; i < n; i++) {
+            idfs[i] = Ranking.idf(indexMap.get(words[i]).getIndexAsBytes());
+            wordPositionsMap.put(words[i], searchMap.get(words[i]));
+        }
+
+        for (int docId : docIds0) {
+            int scope = 0;
+            for (int i = 0; i < n; i++) {
+                BytesRange poss = wordPositionsMap.get(words[i]).positions(docId);
+                scope += Ranking.tfIdf(idfs[i], poss);
+            }
+
+            indScope.put(docId, scope);
+            if (indScope.size() > count) {
+                indScope.pollLastEntry();
+            }
+        }
+
+        int[] res = Ints.toArray(indScope.keySet());
+        Arrays.sort(res);
+        return res;
     }
 
     /**
