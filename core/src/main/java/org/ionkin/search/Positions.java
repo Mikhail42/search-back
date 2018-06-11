@@ -8,7 +8,7 @@ import java.util.Arrays;
 
 public class Positions {
 
-    private static final int JUMP = 10_000_000;
+    static final int JUMP = 100;
     private static final int JUMP_SQR = JUMP * JUMP;
 
     private final int indexLength;
@@ -78,7 +78,6 @@ public class Positions {
     public BytesRange positions(int docId) {
         int jumpInd = getJumpIndByDocIdWithJumpSqr(docId);
         int startPos = getPosByDocIdWithJump(docId, jumpInd);
-        if (startPos != 0) throw new IllegalStateException();
         int docPos = getPosByDocId(docId, startPos);
         return getRangeByPackedPos(docPos);
     }

@@ -3,7 +3,7 @@ package org.ionkin.search;
 import java.nio.ByteBuffer;
 
 public class Index {
-    private static final int JUMP = 30;
+    static final int JUMP = 50;
     private static final int JUMP_SQR = JUMP * JUMP;
     private static final int JUMP_POW4 = JUMP_SQR * JUMP_SQR;
 
@@ -85,6 +85,10 @@ public class Index {
         buf.put(index.getCopy());
 
         return buf.array();
+    }
+
+    public BytesRange getIndexAsBytes() {
+        return this.index;
     }
 
     public int[] getIndex(int take) {

@@ -28,19 +28,40 @@ public class EvaluatorPerformance {
     private final SearchMap positions;
 
     public static void main(String... args) throws Exception {
-        EvaluatorPerformance evaluator = load(Util.indexPath, Util.positionsPath);
+        //writeTestMap();
+        //EvaluatorPerformance evaluator = load(Util.basePath + "indexlemm.sbm", Util.basePath + "positionslemm.spm");
+        new IndexMap(new StringBytesMap(Util.basePath + "indexlemm.sbm")).write(Util.basePath + "indexlemm.im");
+        new SearchMap(new StringPositionsMap(Util.basePath + "positionslemm.spm")).write(Util.basePath + "positionslemm.sm");
+        /*long t1 = System.currentTimeMillis();
         logger.info(Arrays.toString(evaluator.evaluate("«об авторских правах»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«Слово о полку Игореве»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate(" «что  где  когда»  &&  !«хрустальная  сова»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«что  где  когда»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«что  где  когда»  /  5", 50)));
-        logger.info(Arrays.toString(evaluator.evaluate("«что  где  когда»    &&    друзь", 50)));
-        logger.info(Arrays.toString(evaluator.evaluate(" «что  где  когда»  ||    квн", 50)));
+       // logger.info(Arrays.toString(evaluator.evaluate("«что  где  когда»    &&    друзь", 50)));
+       // logger.info(Arrays.toString(evaluator.evaluate(" «что  где  когда»  ||    квн", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«война и мир»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«1 российский фильм»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«Петр Великий»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«Двенадцать стульев»", 50)));
-        logger.info(Arrays.toString(evaluator.evaluate("«Булев поиск»", 50)));
+        logger.info("middle time: {}", (System.currentTimeMillis() - t1) / 9);*/
+        //logger.info(Arrays.toString(evaluator.evaluate("«Булев поиск»", 50)));
+    }
+
+    private static void writeTestMap() throws Exception {
+        Stream<LightString> words = Stream.of(("об авторских правах Слово о полку Игореве что где когда хрустальная" +
+                " сова война и мир 1 российский фильм Петр Великий Двенадцать стульев").split(" "))
+                .map(Normalizer::normalize).map(LightString::new);
+        StringBytesMap indexMap = new StringBytesMap(Util.indexPath);
+        StringBytesMap testIm = new StringBytesMap();
+        StringPositionsMap searchMap = new StringPositionsMap(Util.positionsPath);
+        StringPositionsMap testSm = new StringPositionsMap();
+        words.forEach(w -> {
+            testSm.put(w, searchMap.get(w));
+            testIm.put(w, indexMap.get(w));
+        });
+        testIm.write(Util.basePath + "test.index");
+        testSm.write(Util.basePath + "test.posit");
     }
 
     public static EvaluatorPerformance load() throws IOException {
@@ -116,8 +137,8 @@ public class EvaluatorPerformance {
         byte[] docsAsBytes = IO.read(Util.basePath + "docids.chsi");
         int[] allIds = Compressor.decompressVb(docsAsBytes);
 
-        IndexMap indexMap = new IndexMap(Util.basePath + "index.im");
-        SearchMap searchMap = new SearchMap(Util.basePath + "positions.sm");
+        IndexMap indexMap = new IndexMap(new StringBytesMap(indexPath));
+        SearchMap searchMap = new SearchMap(new StringPositionsMap(positionsPath));
 
         return new EvaluatorPerformance(searchMap, indexMap, allIds);
     }

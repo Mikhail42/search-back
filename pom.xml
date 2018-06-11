@@ -14,6 +14,7 @@
         <module>boolparser</module>
         <module>parsington</module>
         <module>lemmatization</module>
+        <module>ranking</module>
     </modules>
 
     <properties>

@@ -17,6 +17,7 @@ public class Util {
     public static final String positionsPath = basePath + "positions.chmsp";
     public static final String testPositionsPath = basePath + "testPositions.chmsp";
     public static final String dictionaryPath = basePath + "allwords0606.chsls";
+    public static final String wordLemmPath = basePath + "lemm/allWordMap.chmss";
 
     public static final String wordSymbol = "\\p{L}\\p{N}\u0301";
     public static final Splitter splitPatternLazy = Splitter.onPattern("[^" + wordSymbol + "]+");
@@ -65,5 +66,22 @@ public class Util {
         int i = 0;
         for (LightString val : set) a[i++] = val;
         return a;
+    }
+
+    public static int[] merge(int[] a, int[] b) {
+        int[] answer = new int[a.length + b.length];
+        int i = 0, j = 0, k = 0;
+
+        while (i < a.length && j < b.length)
+            answer[k++] = a[i] < b[j] ? a[i++] :  b[j++];
+
+        while (i < a.length)
+            answer[k++] = a[i++];
+
+
+        while (j < b.length)
+            answer[k++] = b[j++];
+
+        return answer;
     }
 }

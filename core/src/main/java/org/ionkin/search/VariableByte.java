@@ -73,6 +73,18 @@ public class VariableByte {
         }
     }
 
+    public static int decompressSize(BytesRange range) {
+        return decompressSize(range.getAll(), range.getFrom(), range.getTo());
+    }
+
+    public static int decompressSize(byte[] in, int from, int until) {
+        int count = 0;
+        for (int i = from; i < until; i++) {
+            if (in[i] < 0) count++;
+        }
+        return count;
+    }
+
     public static int[] uncompress(byte[] in, int take) {
         return uncompress(in, 0, in.length, take);
     }
