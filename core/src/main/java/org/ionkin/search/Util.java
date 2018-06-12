@@ -2,6 +2,7 @@ package org.ionkin.search;
 
 import com.google.common.base.Splitter;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -72,16 +73,29 @@ public class Util {
         int[] answer = new int[a.length + b.length];
         int i = 0, j = 0, k = 0;
 
-        while (i < a.length && j < b.length)
-            answer[k++] = a[i] < b[j] ? a[i++] :  b[j++];
+        while (i < a.length && j < b.length) {
+            if (a[i] < b[j]) answer[k++] = a[i++];
+            else if (a[i] > b[j]) answer[k++] = b[j++];
+            else {
+                answer[k++] = b[j++];
+                i++;
+            }
+        }
 
+        if (i < a.length) {
+            if (a[i] != answer[k]) answer[k++] = a[i];
+            i++;
+        }
         while (i < a.length)
             answer[k++] = a[i++];
 
-
+        if (j < b.length) {
+            if (b[j] != answer[k]) answer[k++] = b[j];
+            j++;
+        }
         while (j < b.length)
             answer[k++] = b[j++];
 
-        return answer;
+        return k == answer.length ? answer : Arrays.copyOf(answer, k);
     }
 }

@@ -10,9 +10,9 @@ public class VariableByteTest {
 
     @Test
     public void compressUncompress() {
-        int[] ar = new int[] {1, 4, 9, 10, 100, 400};
+        int[] ar = new int[] {1, 4, 9, 10, 100, 400, 256, 257, 127, 128, 257, 129, 10000, 10000000};
         byte[] comp = VariableByte.compress(ar);
-        int[] uncomp = VariableByte.uncompress(comp, 6);
+        int[] uncomp = VariableByte.uncompress(comp, ar.length);
         assertTrue(Arrays.equals(ar, uncomp));
     }
 }

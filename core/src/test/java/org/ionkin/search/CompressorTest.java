@@ -42,7 +42,7 @@ public class CompressorTest {
 
     @Test
     public void compressDecompressVb2() {
-        int[] ar = new int[]{1, 2, 3, 4, 6, 8, 13, 23, 27, 1000, 1001};
+        int[] ar = new int[]{1, 2, 3, 4, 6, 8, 13, 23, 27, 27 + 256, 27 + 511, 1000, 1128, 1129, 1129 + 127, 2000};
         byte[] comp = Compressor.compressVbWithoutMemory(ar);
         Compressor.sum(ar);
         int[] decomp = Compressor.decompressVb(comp);

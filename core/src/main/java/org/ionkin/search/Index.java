@@ -136,7 +136,7 @@ public class Index {
         // if pow4 jump is not need
         if (jumpPow4.length == 0) return 0;
         int i = 0;
-        while (i < jumpPow4.length && (jumpSum[jumpSqr[jumpPow4[i]]] < docId)) i++;
+        while (i < jumpPow4.length && (jumpSum[jumpSqr[jumpPow4[i]]] <= docId)) i++;
         if (i == jumpPow4.length) return jumpPow4[jumpPow4.length - 1];
         // else jumpSum[jumpSqr[jumpPow4[i]]] >= docId
         // and if i>= 0 then jumpSum[jumpSqr[jumpPow4[i-1]]] >= docId
@@ -148,7 +148,7 @@ public class Index {
         // if sqr jump is not need
         if (jumpSqr.length == 0) return 0;
         int i = jumpSqrStartInd;
-        while (i < jumpSqr.length && (jumpSum[jumpSqr[i]] < docId)) i++;
+        while (i < jumpSqr.length && (jumpSum[jumpSqr[i]] <= docId)) i++;
         if (i == jumpSqr.length) return jumpSqr[jumpSqr.length - 1];
         i--;
         return (i == -1) ? 0 : jumpSqr[i];
@@ -157,7 +157,7 @@ public class Index {
     private int getJumpIndByDocId(int docId, int jumpStartInd) {
         if (jumpRef.length == 0) return -1;
         int i = jumpStartInd;
-        while (i < jumpSum.length && (jumpSum[i] < docId)) i++;
+        while (i < jumpSum.length && (jumpSum[i] <= docId)) i++;
         return i - 1;
     }
 

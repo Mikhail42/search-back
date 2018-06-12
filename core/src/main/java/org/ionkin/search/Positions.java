@@ -8,8 +8,8 @@ import java.util.Arrays;
 
 public class Positions {
 
-    static final int JUMP = 100;
-    private static final int JUMP_SQR = JUMP * JUMP;
+    static final int JUMP = 3; // TODO
+    private static final int JUMP_SQR = JUMP * JUMP; // TODO
 
     private final int indexLength;
     private final int[] jumpSqr;
@@ -28,6 +28,7 @@ public class Positions {
         ByteArray acc = new ByteArray(keysSet.length * 20);
         for (int key : keysSet) {
             if (++k % JUMP == 0) {
+                // прыжок указывает на начало информации о позициях некоторого документа
                 jump[k / JUMP - 1] = acc.size();
                 if (k % JUMP_SQR == 0) {
                     jumpSqr[k / JUMP_SQR - 1] = k / JUMP - 1;
@@ -35,6 +36,7 @@ public class Positions {
             }
 
             BytesRange v = positions.get(key);
+            // информация о позициях документа хранит номер документа, длину позиций в байтах, и сами позиции
             acc.add(VariableByte.compress(key)); // docId
             acc.add(VariableByte.compress(v.length())); // range length
             acc.add(v); // range
@@ -76,8 +78,8 @@ public class Positions {
     }
 
     public BytesRange positions(int docId) {
-        int jumpInd = getJumpIndByDocIdWithJumpSqr(docId);
-        int startPos = getPosByDocIdWithJump(docId, jumpInd);
+        int startJumpInd = getJumpIndByDocIdWithJumpSqr(docId);
+        int startPos = getPosByDocIdWithStartJump(docId, startJumpInd);
         int docPos = getPosByDocId(docId, startPos);
         return getRangeByPackedPos(docPos);
     }
@@ -98,20 +100,20 @@ public class Positions {
         if (jumpSqr.length == 0 || getDocId(jump[jumpSqr[0]]) > docId) {
             return 0;
         }
-        int i = 0;
-        while (i < jumpSqr.length && getDocId(jump[jumpSqr[i++]]) < docId) ;
-        if (i == jumpSqr.length) i--;
-        return jumpSqr[i];
+        int jumpSqrInd = 0;
+        while (jumpSqrInd < jumpSqr.length && getDocId(jump[jumpSqr[jumpSqrInd]]) <= docId) jumpSqrInd++;
+        jumpSqrInd--;
+        return jumpSqr[jumpSqrInd];
     }
 
-    private int getPosByDocIdWithJump(int docId, int jumpInd) {
+    private int getPosByDocIdWithStartJump(int docId, int startJumpInd) {
         if (jump.length == 0 || getDocId(jump[0]) > docId) {
             return 0;
         }
-        int i = jumpInd;
-        while (i < jump.length && getDocId(jump[i++]) < docId) ;
-        if (i == jump.length) i--;
-        return jump[i];
+        int jumpInd = startJumpInd;
+        while (jumpInd < jump.length && getDocId(jump[jumpInd]) <= docId) jumpInd++;
+        jumpInd--;
+        return jump[jumpInd];
     }
 
     private int getPosByDocId(int docId, int startPos) {
