@@ -24,15 +24,11 @@ public class EvaluatorPerformance {
     private static Logger logger = LoggerFactory.getLogger(EvaluatorPerformance.class);
 
     private final int[] allIds;
-    private final IndexMap indexMap;
+    private final StringBytesMap indexMap;
     private final SearchMap positions;
 
     public static void main(String... args) throws Exception {
-        //writeTestMap();
-        EvaluatorPerformance evaluator = load(Util.basePath + "test.index", Util.basePath + "test.posit");
-        //new IndexMap(new StringBytesMap(Util.basePath + "indexlemm.sbm")).write(Util.basePath + "indexlemm.im");
-        //new SearchMap(new StringPositionsMap(Util.basePath + "positionslemm.spm")).write(Util.basePath + "positionslemm.sm");
-        long t1 = System.currentTimeMillis();
+        EvaluatorPerformance evaluator = load(Util.indexPath, Util.positionsPath);
         logger.info(Arrays.toString(evaluator.evaluate("«об авторских правах»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«Слово о полку Игореве»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate(" «что  где  когда»  &&  !«хрустальная  сова»", 50)));
@@ -45,23 +41,6 @@ public class EvaluatorPerformance {
         logger.info(Arrays.toString(evaluator.evaluate("«Петр Великий»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«Двенадцать стульев»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«Булев поиск»", 50)));
-        logger.info("middle time: {}", (System.currentTimeMillis() - t1) / 12);
-    }
-
-    private static void writeTestMap() throws Exception {
-        Stream<LightString> words = Stream.of(("об авторских правах Слово о полку Игореве что где когда хрустальная" +
-                " сова война и мир 1 российский фильм Петр Великий Двенадцать стульев друзь квн Булев поиск").split(" "))
-                .map(Normalizer::normalize).map(LightString::new);
-        StringBytesMap indexMap = new StringBytesMap(Util.indexPath);
-        StringBytesMap testIm = new StringBytesMap();
-        StringPositionsMap searchMap = new StringPositionsMap(Util.positionsPath);
-        StringPositionsMap testSm = new StringPositionsMap();
-        words.forEach(w -> {
-            testSm.put(w, searchMap.get(w));
-            testIm.put(w, indexMap.get(w));
-        });
-        testIm.write(Util.basePath + "test.index");
-        testSm.write(Util.basePath + "test.posit");
     }
 
     public static EvaluatorPerformance load() throws IOException {
@@ -137,13 +116,13 @@ public class EvaluatorPerformance {
         byte[] docsAsBytes = IO.read(Util.basePath + "docids.chsi");
         int[] allIds = Compressor.decompressVb(docsAsBytes);
 
-        IndexMap indexMap = new IndexMap(new StringBytesMap(indexPath));
-        SearchMap searchMap = new SearchMap(new StringPositionsMap(positionsPath));
+        StringBytesMap indexMap = new StringBytesMap(Util.basePath + "index.chmsb");
+        SearchMap searchMap = new SearchMap(Util.basePath + "positions.sm");
 
         return new EvaluatorPerformance(searchMap, indexMap, allIds);
     }
 
-    public EvaluatorPerformance(SearchMap positions, IndexMap indexMap, int[] allIds) {
+    public EvaluatorPerformance(SearchMap positions, StringBytesMap indexMap, int[] allIds) {
         this.indexMap = indexMap;
         this.allIds = allIds;
         this.positions = positions;
@@ -157,69 +136,30 @@ public class EvaluatorPerformance {
     public int[] evaluate(String query, int count) {
         SyntaxTree tree = createSyntaxTree(query);
         logger.debug("expression three '{}'", tree);
-        int[] docIds0 = evaluate(tree, count);//TODO
-        //List<LightString> wordsAsList =  queryWords(tree);
-        //LightString[] words = wordsAsList.toArray(new LightString[0]);
-        return docIds0;//Logic.rankingTfIdf(docIds0, words, this.positions, this.indexMap, count);
-    }
-
-    static boolean isBoolQuery(String query) {
-        Pattern pattern = Pattern.compile("[&|!()\\[\\]{}/«»\"]");
-        return pattern.matcher(query).find();
+        return evaluate(tree, count);
     }
 
     static SyntaxTree createSyntaxTree(String query) {
         logger.debug("start evaluate '{}'", query);
         String normalized = Normalizer.normalize(query);
         logger.debug("normalized '{}'", normalized);
-        if (isBoolQuery(query)) {
-            //normalized = normalized.replaceAll(" ", " && ");
-            Matcher spaceMatcher = Pattern.compile(" ([^&|/])").matcher(normalized);
-            if (spaceMatcher.find()) {
-                normalized = spaceMatcher.replaceAll(" && $1");
-            }
-            logger.debug("normalized '{}'", normalized);
-            Matcher andLeftMatcher = Pattern.compile("&& ([&|/])").matcher(normalized);
-            if (andLeftMatcher.find()) {
-                normalized = andLeftMatcher.replaceAll("$1");
-            }
-            logger.debug("normalized '{}'", normalized);
-            Matcher andRightMatcher = Pattern.compile("([&|/]) &&").matcher(normalized);
-            if (andRightMatcher.find()) {
-                normalized = andRightMatcher.replaceAll("$1");
-            }
-        } else {
-            normalized = normalized.replaceAll(" ", " || ");
+        //normalized = normalized.replaceAll(" ", " && ");
+        Matcher spaceMatcher = Pattern.compile(" ([^&|/])").matcher(normalized);
+        if (spaceMatcher.find()) {
+            normalized = spaceMatcher.replaceAll(" && $1");
+        }
+        logger.debug("normalized '{}'", normalized);
+        Matcher andLeftMatcher = Pattern.compile("&& ([&|/])").matcher(normalized);
+        if (andLeftMatcher.find()) {
+            normalized = andLeftMatcher.replaceAll("$1");
+        }
+        logger.debug("normalized '{}'", normalized);
+        Matcher andRightMatcher = Pattern.compile("([&|/]) &&").matcher(normalized);
+        if (andRightMatcher.find()) {
+            normalized = andRightMatcher.replaceAll("$1");
         }
         logger.debug("normalized '{}'", normalized);
         return new ExpressionParser().parseTree(normalized);
-    }
-
-    static List<LightString> queryWords(SyntaxTree tree) {
-        final Object tokenObj = tree.token();
-        final String token = tokenObj.toString();
-        logger.debug("token: '{}'", token);
-        if (Tokens.isGroup(tokenObj)) {
-            return queryWords(tree.child(0));
-        } else if (Tokens.isOperator(tokenObj)) {
-            switch (token) {
-                case "&&":
-                case "||":
-                    List<LightString> res = queryWords(tree.child(0));
-                    res.addAll(queryWords(tree.child(1)));
-                    return res;
-                case "!":
-                    return new LinkedList<>();
-                case "/":
-                    return queryWords(tree.child(0));
-                default:
-                    throw new IllegalArgumentException("Unexpected operator: " + token);
-            }
-        } else {
-            return new LinkedList<LightString>() {{
-                add(new LightString(token));
-            }};
-        }
     }
 
     private int[] evaluate(SyntaxTree tree, int count) {
@@ -279,11 +219,12 @@ public class EvaluatorPerformance {
      * @see Logic#andQuotes
      */
     int[] andQuotes(List<LightString> words, int count, int distance) {
-        Index[] wordDocIds = new Index[words.size()];
+        // TODO
+        int[][] wordDocIds = new int[words.size()][];
         Positions[] poss = new Positions[words.size()];
         for (int i = 0; i < words.size(); i++) {
             LightString word = words.get(i);
-            wordDocIds[i] = indexMap.get(word);
+            wordDocIds[i] = this.get(word, Integer.MAX_VALUE);
             poss[i] = positions.get(word);
         }
         return Logic.andQuotes(wordDocIds, poss, count, distance);
@@ -301,8 +242,8 @@ public class EvaluatorPerformance {
 
     int[] get(LightString token, int count) {
         logger.trace("token: {}", token);
-        Index index = indexMap.get(token);
-        return index.getIndex(count);
+        BytesRange range = indexMap.get(token);
+        return Compressor.decompressVb(range, count);
     }
 
     private List<Object> allTokens(SyntaxTree tree) {
