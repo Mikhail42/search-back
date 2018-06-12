@@ -21,7 +21,7 @@ public class Ranking {
         return tfIdf(idf, pos);
     }
 
-    public static byte tfIdf(byte idf, BytesRange positions) {
+    private static byte tfIdf(byte idf, BytesRange positions) {
         return (byte) Math.max(idf * tf(positions), Byte.MAX_VALUE);
     }
 
@@ -29,7 +29,7 @@ public class Ranking {
      * @param index inverse index for specific term
      * @return IDF of term.
      */
-    public static byte idf(BytesRange index) {
+    private static byte idf(BytesRange index) {
         int freq = VariableByte.decompressSize(index);
         return logFreq(RUSSIAN_WIKI / freq);
     }

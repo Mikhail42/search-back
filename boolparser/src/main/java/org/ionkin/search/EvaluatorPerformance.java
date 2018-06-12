@@ -24,23 +24,44 @@ public class EvaluatorPerformance {
     private static Logger logger = LoggerFactory.getLogger(EvaluatorPerformance.class);
 
     private final int[] allIds;
-    private final StringBytesMap indexMap;
+    private final IndexMap indexMap;
     private final SearchMap positions;
 
     public static void main(String... args) throws Exception {
-        EvaluatorPerformance evaluator = load(Util.indexPath, Util.positionsPath);
+        //writeTestMap();
+        //EvaluatorPerformance evaluator = load(Util.basePath + "indexlemm.sbm", Util.basePath + "positionslemm.spm");
+        new IndexMap(new StringBytesMap(Util.basePath + "indexlemm.sbm")).write(Util.basePath + "indexlemm.im");
+        new SearchMap(new StringPositionsMap(Util.basePath + "positionslemm.spm")).write(Util.basePath + "positionslemm.sm");
+        /*long t1 = System.currentTimeMillis();
         logger.info(Arrays.toString(evaluator.evaluate("«об авторских правах»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«Слово о полку Игореве»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate(" «что  где  когда»  &&  !«хрустальная  сова»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«что  где  когда»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«что  где  когда»  /  5", 50)));
-        logger.info(Arrays.toString(evaluator.evaluate("«что  где  когда»    &&    друзь", 50)));
-        logger.info(Arrays.toString(evaluator.evaluate(" «что  где  когда»  ||    квн", 50)));
+       // logger.info(Arrays.toString(evaluator.evaluate("«что  где  когда»    &&    друзь", 50)));
+       // logger.info(Arrays.toString(evaluator.evaluate(" «что  где  когда»  ||    квн", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«война и мир»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«1 российский фильм»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«Петр Великий»", 50)));
         logger.info(Arrays.toString(evaluator.evaluate("«Двенадцать стульев»", 50)));
-        logger.info(Arrays.toString(evaluator.evaluate("«Булев поиск»", 50)));
+        logger.info("middle time: {}", (System.currentTimeMillis() - t1) / 9);*/
+        //logger.info(Arrays.toString(evaluator.evaluate("«Булев поиск»", 50)));
+    }
+
+    private static void writeTestMap() throws Exception {
+        Stream<LightString> words = Stream.of(("об авторских правах Слово о полку Игореве что где когда хрустальная" +
+                " сова война и мир 1 российский фильм Петр Великий Двенадцать стульев").split(" "))
+                .map(Normalizer::normalize).map(LightString::new);
+        StringBytesMap indexMap = new StringBytesMap(Util.indexPath);
+        StringBytesMap testIm = new StringBytesMap();
+        StringPositionsMap searchMap = new StringPositionsMap(Util.positionsPath);
+        StringPositionsMap testSm = new StringPositionsMap();
+        words.forEach(w -> {
+            testSm.put(w, searchMap.get(w));
+            testIm.put(w, indexMap.get(w));
+        });
+        testIm.write(Util.basePath + "test.index");
+        testSm.write(Util.basePath + "test.posit");
     }
 
     public static EvaluatorPerformance load() throws IOException {
@@ -116,13 +137,13 @@ public class EvaluatorPerformance {
         byte[] docsAsBytes = IO.read(Util.basePath + "docids.chsi");
         int[] allIds = Compressor.decompressVb(docsAsBytes);
 
-        StringBytesMap indexMap = new StringBytesMap(Util.basePath + "index.chmsb");
-        SearchMap searchMap = new SearchMap(Util.basePath + "positions.sm");
+        IndexMap indexMap = new IndexMap(new StringBytesMap(indexPath));
+        SearchMap searchMap = new SearchMap(new StringPositionsMap(positionsPath));
 
         return new EvaluatorPerformance(searchMap, indexMap, allIds);
     }
 
-    public EvaluatorPerformance(SearchMap positions, StringBytesMap indexMap, int[] allIds) {
+    public EvaluatorPerformance(SearchMap positions, IndexMap indexMap, int[] allIds) {
         this.indexMap = indexMap;
         this.allIds = allIds;
         this.positions = positions;
@@ -219,12 +240,11 @@ public class EvaluatorPerformance {
      * @see Logic#andQuotes
      */
     int[] andQuotes(List<LightString> words, int count, int distance) {
-        // TODO
-        int[][] wordDocIds = new int[words.size()][];
+        Index[] wordDocIds = new Index[words.size()];
         Positions[] poss = new Positions[words.size()];
         for (int i = 0; i < words.size(); i++) {
             LightString word = words.get(i);
-            wordDocIds[i] = this.get(word, Integer.MAX_VALUE);
+            wordDocIds[i] = indexMap.get(word);
             poss[i] = positions.get(word);
         }
         return Logic.andQuotes(wordDocIds, poss, count, distance);
@@ -242,8 +262,8 @@ public class EvaluatorPerformance {
 
     int[] get(LightString token, int count) {
         logger.trace("token: {}", token);
-        BytesRange range = indexMap.get(token);
-        return Compressor.decompressVb(range, count);
+        Index index = indexMap.get(token);
+        return index.getIndex(count);
     }
 
     private List<Object> allTokens(SyntaxTree tree) {
