@@ -98,7 +98,6 @@ public class Logic {
     static int[] andQuotes(Index[] wordIndices, Positions[] wordPositionsMap, int count, int distance) {
         IntArray res = new IntArray();
         int n = wordIndices.length;
-        int[] docIds = Compressor.decompressVb(wordIndices[1].getIndexAsBytes()); // TODO
         // check that all indices is not empty
         boolean isNotOutOfBound = true;
         for (Index index : wordIndices) {
@@ -144,9 +143,11 @@ public class Logic {
     }
 
     static int[] rankingTfIdf(int[] docIds0, LightString[] words, SearchMap searchMap, IndexMap indexMap, int count) {
-        TreeMap<Integer, Integer> indScope = new TreeMap<>((x, y) -> Integer.compare(y, x));
+        TreeMap<Integer, List<Integer>> indScope = new TreeMap<>(Integer::compare);
+        indScope.put(0, new LinkedList<>());
 
         int n = words.length;
+        int nInScope = 0;
 
         byte[] idfs = new byte[n];
         Map<LightString, Positions> wordPositionsMap = new HashMap<>();
@@ -159,18 +160,39 @@ public class Logic {
             int scope = 0;
             for (int i = 0; i < n; i++) {
                 BytesRange poss = wordPositionsMap.get(words[i]).positions(docId);
-                scope += Ranking.tfIdf(idfs[i], poss);
+                if (poss.length() != 0) {
+                    scope += Ranking.tfIdf(idfs[i], poss);
+                }
             }
 
-            indScope.put(docId, scope);
-            if (indScope.size() > count) {
-                indScope.pollLastEntry();
+            if (scope >= indScope.firstKey()) {
+                List<Integer> list = indScope.getOrDefault(scope, new LinkedList<>());
+                list.add(docId);
+                nInScope++;
+
+                indScope.put(scope, list);
+            }
+            if (nInScope > count) {
+                int s = indScope.firstEntry().getValue().size();
+                if (nInScope - s >= count) {
+                    indScope.pollFirstEntry();
+                    nInScope -= s;
+                }
             }
         }
 
-        int[] res = Ints.toArray(indScope.keySet());
-        Arrays.sort(res);
-        return res;
+        IntArray res = new IntArray();
+        indScope.forEach((k, v) -> {
+            res.add(Ints.toArray(v));
+        });
+        int[] result = res.getCopy();
+        Arrays.sort(result);
+        for (int i=0; i<result.length/2; i++) {
+            int t = result[i];
+            result[i] = result[result.length - 1 - i];
+            result[result.length - 1 - i] = t;
+        }
+        return (result.length > count) ? Arrays.copyOf(result, count) : result;
     }
 
     /**

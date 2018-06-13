@@ -15,6 +15,7 @@
         <module>parsington</module>
         <module>lemmatization</module>
         <module>ranking</module>
+        <module>snippet</module>
     </modules>
 
     <properties>

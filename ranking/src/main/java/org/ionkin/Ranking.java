@@ -15,14 +15,18 @@ public class Ranking {
         IndexMap index = new IndexMap(Util.basePath + "indexlemm.im");
     }
 
-    private static byte tfIdf(SearchMap positions, IndexMap index, LightString word, int docId) {
+    private static int tfIdf(SearchMap positions, IndexMap index, LightString word, int docId) {
         byte idf = idf(index.get(word).getIndexAsBytes());
         BytesRange pos = positions.get(word).positions(docId);
         return tfIdf(idf, pos);
     }
 
-    public static byte tfIdf(byte idf, BytesRange positions) {
-        return (byte) Math.max(idf * tf(positions), Byte.MAX_VALUE);
+    public static int tfIdf(byte idf, int[] positions) {
+        return idf * tf(positions);
+    }
+
+    public static int tfIdf(byte idf, BytesRange positions) {
+        return idf * tf(positions);
     }
 
     /**
@@ -38,6 +42,10 @@ public class Ranking {
         Map<Integer, Byte> res = new HashMap<>();
         idPositionsMap.forEach((docId, positions) -> res.put(docId, tf(positions)));
         return res;
+    }
+
+    private static byte tf(int[] positions) {
+        return logFreq(positions.length);
     }
 
     private static byte tf(BytesRange positions) {

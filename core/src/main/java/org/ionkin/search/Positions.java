@@ -8,8 +8,8 @@ import java.util.Arrays;
 
 public class Positions {
 
-    static final int JUMP = 3; // TODO
-    private static final int JUMP_SQR = JUMP * JUMP; // TODO
+    static final int JUMP = 75;
+    private static final int JUMP_SQR = JUMP * JUMP;
 
     private final int indexLength;
     private final int[] jumpSqr;
@@ -78,10 +78,15 @@ public class Positions {
     }
 
     public BytesRange positions(int docId) {
-        int startJumpInd = getJumpIndByDocIdWithJumpSqr(docId);
-        int startPos = getPosByDocIdWithStartJump(docId, startJumpInd);
-        int docPos = getPosByDocId(docId, startPos);
-        return getRangeByPackedPos(docPos);
+        try {
+            int startJumpInd = getJumpIndByDocIdWithJumpSqr(docId);
+            int startPos = getPosByDocIdWithStartJump(docId, startJumpInd);
+            int docPos = getPosByDocId(docId, startPos);
+            return getRangeByPackedPos(docPos);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new BytesRange(new byte[0]);
+        }
     }
 
     private int getDocId(int pos) {

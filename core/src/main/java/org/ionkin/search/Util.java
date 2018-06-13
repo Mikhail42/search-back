@@ -69,6 +69,15 @@ public class Util {
         return a;
     }
 
+    public static int[] mergeSimple(int[][] mat) {
+        int size = 0; for (int[] m : mat) size += m.length;
+        IntArray ar = new IntArray(size);
+        for (int[] m : mat) ar.add(m);
+        int[] res = ar.getAll();
+        Arrays.sort(res);
+        return res;
+    }
+
     public static int[] merge(int[] a, int[] b) {
         int[] answer = new int[a.length + b.length];
         int i = 0, j = 0, k = 0;

@@ -93,7 +93,7 @@ public class TextArticleIterator {
         return batch.iterator();
     }
 
-    private static void writePositions() throws IOException {
+    static void writePositions() throws IOException {
         CompactHashMap<Integer, Pair<Integer, Integer>> docidPositionMap =
                 new CompactHashMap<>(new IntIntIntTranslator());
         ParallelFor.par((i) -> {

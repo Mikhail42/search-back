@@ -36,7 +36,6 @@ public class StringBytesMap extends CompactHashMap<LightString, BytesRange> {
             for (StringBytesMap map : maps) {
                 BytesRange ar = map.get(word);
                 if (ar != null) {
-                    // TODO
                     int[] src = Compressor.decompressVb(ar);
                     list.add(src);
                     size += src.length;

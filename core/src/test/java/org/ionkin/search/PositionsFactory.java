@@ -19,6 +19,21 @@ public class PositionsFactory {
         assertArrayEquals(pos.positions(5).getCopy(), ar2);
     }
 
+
+    @Test
+    public void create4() {
+        IntBytesMap intBytesMap = new IntBytesMap();
+        int[] poss1 = new int[]{2, 10};
+        int[] poss2 = new int[]{2, 10};
+
+        intBytesMap.put(15, new BytesRange(Compressor.compressVbWithMemory(poss1)));
+        intBytesMap.put(25, new BytesRange(Compressor.compressVbWithMemory(poss2)));
+
+        Positions pos = new Positions(intBytesMap);
+        assertArrayEquals(Compressor.decompressVb(pos.positions(15)), poss1);
+        assertArrayEquals(Compressor.decompressVb(pos.positions(25)), poss2);
+    }
+
     @Test
     public void create2() {
         IntBytesMap ibm = new IntBytesMap();
@@ -63,6 +78,27 @@ public class PositionsFactory {
         assertArrayEquals(pos.positions(105).getCopy(), ar4);
         assertArrayEquals(pos.positions(205).getCopy(), ar5);
         assertArrayEquals(pos.positions(500).getCopy(), ar6);
+    }
+
+    @Test
+    public void deserialize() {
+        ByteArray buf = new ByteArray();
+
+        buf.add(VariableByte.compress(1)); // index length
+
+        buf.add(VariableByte.compress(15)); // index
+
+        int[] positions = new int[]{2, 10};
+        byte[] bytes = Compressor.compressVbWithMemory(positions);
+        buf.add(VariableByte.compress(bytes.length));
+        buf.add(bytes);
+
+        byte[] copy = buf.getCopy();
+
+        Positions pos = Positions.deserialize(copy, 0);
+        BytesRange range = pos.positions(15);
+
+        assertArrayEquals(Compressor.decompressVb(range), positions);
     }
 
     private byte[] fromWithoutDiff(int... ar) {
