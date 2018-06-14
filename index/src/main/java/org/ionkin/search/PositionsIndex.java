@@ -77,30 +77,6 @@ public class PositionsIndex {
         }
     }
 
-    public static void testJoin() throws Exception {
-        String[] filenames = new String[] {"AN f", "AO f"};
-        final StringPositionsMap[] maps = new StringPositionsMap[]{
-                new StringPositionsMap(Util.positionIndexFolder + filenames[0]),
-                new StringPositionsMap(Util.positionIndexFolder + filenames[1])
-        };
-        Map<Integer, BytesRange> joinJam = StringPositionsMap.joinByWord(maps, new LightString("ямерта"));
-        BytesRange r = joinJam.get(1068912);
-        /*logger.info("bytes before join: {}", Arrays.toString(r.getCopy()));
-        logger.info("ints before join: {}", Arrays.toString(Compressor.decompressVb(r)));*/
-
-        IntBytesMap compact = new IntBytesMap();
-        compact.put(1068912, r);
-        logger.info("bytes at IntBytesMap: {}", Arrays.toString(compact.get(1068912).getCopy()));
-        logger.info("ints at IntBytesMap: {}", Arrays.toString(Compressor.decompressVb(compact.get(1068912))));
-/*
-        StringPositionsMap res = new StringPositionsMap();
-        res.put(new LightString("ямерта"), compact);
-
-        BytesRange r2 = res.get(new LightString("ямерта")).get(1068912);
-        logger.info("bytes at StringPositionsMap: {}", Arrays.toString(r2.getCopy()));
-        logger.info("ints at StringPositionsMap: {}", Arrays.toString(Compressor.decompressVb(r2)));*/
-    }
-
     public static void writePositionsByFileArticles(String inDir, String outDir) {
         logger.debug("article iterator created");
         String[] files = new File(inDir).list();

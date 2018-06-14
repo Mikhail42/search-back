@@ -16,7 +16,6 @@ public class IndexWorker {
 
     public static void main(String... args) throws Exception {
         logger.debug("started");
-        //writeIndex(Util.basePath + "testText/", Util.testIndexPath);
         writeIndex(Util.textPath, Util.indexFolder);
         joinIndex();
     }
@@ -47,7 +46,7 @@ public class IndexWorker {
         StringBytesMap map = StringBytesMap.join(tokens, mapsBy);
 
         logger.debug("try write all");
-        map.write(Util.indexPath + "_0526_20");
+        map.write(Util.indexPath);
     }
 
     public static void writeIndex(String inDir, String outDir) {
@@ -84,13 +83,10 @@ public class IndexWorker {
             local.forEach((str, list) -> {
                 int[] ar = Ints.toArray(list);
                 byte[] comp = Compressor.compressVbWithoutMemory(ar);
-                //int[] comp = Compressor.compressS9WithoutMemory(ar);
-                //byte[] bytes = IO.toBytes(comp);
                 map.put(str, new BytesRange(comp));
             });
 
             map.write(outDir + file);
         }, 0, files.length);
     }
-
 }

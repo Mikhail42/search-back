@@ -29,6 +29,7 @@ public class Page {
         return content;
     }
 
+    // TODO: add test
     public String getSnippet(int from, int distance) {
         Matcher wordMatcher = Util.wordPattern.matcher(content);
         Matcher splitMatcher = Util.splitPattern.matcher(content);
