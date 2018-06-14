@@ -8,7 +8,7 @@ public class ByteArray {
     private byte[] bytes;
 
     public ByteArray() {
-        this.bytes = new byte[1];
+        this(1);
     }
 
     public ByteArray(int size) {
@@ -17,6 +17,7 @@ public class ByteArray {
 
     public ByteArray(byte[] bytes) {
         this.bytes = bytes;
+        this.pos = bytes.length;
     }
 
     public void add(LightString s) {
@@ -35,9 +36,6 @@ public class ByteArray {
         add(VariableByte.compress(i));
     }
 
-    //int[] out = new int[ar.length()];
-    //IntWrapper outPos = new IntWrapper();
-    //Simple9.compress(ar.getAll(), new IntWrapper(ar.getFrom()), ar.length(), out, outPos);
     public void addRange(IntsRange ar) {
         int diff = bytes.length - pos - ar.length() * 4;
         if (diff < 0) {
