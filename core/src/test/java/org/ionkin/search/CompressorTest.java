@@ -35,7 +35,7 @@ public class CompressorTest {
     }
 
     @Test
-    public void compRagneWithFrom() {
+    public void compRangeWithFrom() {
         int[] poss = Compressor.decompressS9(new BytesRange(new byte[]{12, 23, -128, 0, 104, 104}, 2));
         assertArrayEquals(poss, new int[] {26728});
     }

@@ -19,7 +19,7 @@ public class Index {
     private transient int currentPosition;
     private transient int currentSum;
 
-    public Index(int indexLength, int[] jumpPow4, int[] jumpSqr, int[] jumpRef, int[] jumpSum, BytesRange index) {
+    private Index(int indexLength, int[] jumpPow4, int[] jumpSqr, int[] jumpRef, int[] jumpSum, BytesRange index) {
         this.indexLength = indexLength;
         this.jumpPow4 = jumpPow4;
         this.jumpSqr = jumpSqr;
@@ -28,7 +28,7 @@ public class Index {
         this.index = index;
     }
 
-    public static Index fromOldIndex(int[] index) {
+    static Index fromOldIndex(int[] index) {
         return fromOldIndex(new BytesRange(Compressor.compressVbWithMemory(index)));
     }
 
