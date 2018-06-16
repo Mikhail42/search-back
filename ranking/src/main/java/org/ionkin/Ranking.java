@@ -16,16 +16,16 @@ public class Ranking {
     }
 
     private static int tfIdf(SearchMap positions, IndexMap index, LightString word, int docId) {
-        byte idf = idf(index.get(word).getIndexAsBytes());
+        int idf = idf(index.get(word).getIndexAsBytes());
         BytesRange pos = positions.get(word).positions(docId);
         return tfIdf(idf, pos);
     }
 
-    public static int tfIdf(byte idf, int[] positions) {
+    public static int tfIdf(int idf, int[] positions) {
         return idf * tf(positions);
     }
 
-    public static int tfIdf(byte idf, BytesRange positions) {
+    public static int tfIdf(int idf, BytesRange positions) {
         return idf * tf(positions);
     }
 
@@ -33,22 +33,22 @@ public class Ranking {
      * @param index inverse index for specific term
      * @return IDF of term.
      */
-    public static byte idf(BytesRange index) {
+    public static int idf(BytesRange index) {
         int freq = VariableByte.decompressSize(index);
         return logFreq(RUSSIAN_WIKI / freq);
     }
 
-    private static Map<Integer, Byte> tf(IntBytesMap idPositionsMap) {
-        Map<Integer, Byte> res = new HashMap<>();
+    private static Map<Integer, Integer> tf(IntBytesMap idPositionsMap) {
+        Map<Integer, Integer> res = new HashMap<>();
         idPositionsMap.forEach((docId, positions) -> res.put(docId, tf(positions)));
         return res;
     }
 
-    private static byte tf(int[] positions) {
+    private static int tf(int[] positions) {
         return logFreq(positions.length);
     }
 
-    private static byte tf(BytesRange positions) {
+    private static int tf(BytesRange positions) {
         return logFreq(VariableByte.decompressSize(positions));
     }
 
@@ -56,7 +56,7 @@ public class Ranking {
      * @param freq freq. 0 < freq < 2^31
      * @return 1 + log(freq)
      */
-    private static byte logFreq(int freq) {
-        return (byte)(1 + Math.log(freq));
+    private static int logFreq(int freq) {
+        return (int)(1 + Math.log(freq));
     }
 }

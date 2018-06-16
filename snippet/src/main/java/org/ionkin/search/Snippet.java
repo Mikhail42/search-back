@@ -4,12 +4,12 @@ import org.ionkin.Ranking;
 
 public class Snippet {
 
-    public static String snippet(int[][] wordPositions, byte[] idfs, int distance, Page page) {
+`    public static String snippet(int[][] wordPositions, int[] idfs, int distance, Page page) {
         int optPos = optimumSnippetPosition(wordPositions, idfs, distance);
         return page.getSnippet(optPos, distance);
     }
 
-    static int optimumSnippetPosition(int[][] wordPositions, byte[] idfs, int distance) {
+    static int optimumSnippetPosition(int[][] wordPositions, int[] idfs, int distance) {
         int bestPos = 0;
         int bestScope = -1;
 
