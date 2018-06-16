@@ -122,16 +122,6 @@ public class VariableByte {
         return Ints.toArray(res);
     }
 
-    public static int getNextPosAtRange(BytesRange in, int p) {
-        return getNextPos(in.getAll(), p, in.getTo()) - in.getFrom();
-    }
-
-    public static int getNextPos(byte[] in, int p, int maxPos) {
-        int pos = p;
-        while (in[pos++] >= 0 && pos < maxPos);
-        return pos;
-    }
-
     public static int getNextPos(byte[] in, int p) {
         int pos = p;
         while (in[pos++] >= 0 && pos < in.length);
@@ -183,10 +173,5 @@ public class VariableByte {
             }
         }
         return v;
-    }
-
-    @Override
-    public String toString() {
-        return this.getClass().getSimpleName();
     }
 }

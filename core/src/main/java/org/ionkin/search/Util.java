@@ -2,10 +2,7 @@ package org.ionkin.search;
 
 import com.google.common.base.Splitter;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 public class Util {
@@ -21,9 +18,11 @@ public class Util {
     public static final String wordLemmPath = basePath + "lemm/allWordMap.chmss";
 
     public static final String wordSymbol = "\\p{L}\\p{N}\u0301";
+    public static final String ruEnLowerSymbol = "a-zа-я0-9";
     public static final Splitter splitPatternLazy = Splitter.onPattern("[^" + wordSymbol + "]+");
     public static final Pattern splitPattern = Pattern.compile("[^" + wordSymbol + "]+");
     public static final Pattern wordPattern = Pattern.compile("[" + wordSymbol + "]+");
+    public static Pattern searchablePatter = Pattern.compile("[" + ruEnLowerSymbol + "]+");
 
     public static final Locale RU = new Locale("RU");
 
@@ -59,7 +58,7 @@ public class Util {
     }
 
     public static boolean searchable(String s) {
-        return !s.isEmpty() && s.matches("[a-zа-я0-9-]+");
+        return !s.isEmpty() && searchablePatter.matcher(s).matches();
     }
 
     public static LightString[] toArray(Set<LightString> set) {
@@ -70,12 +69,53 @@ public class Util {
     }
 
     public static int[] mergeSimple(int[][] mat) {
-        int size = 0; for (int[] m : mat) size += m.length;
+        int size = 0;
+        for (int[] m : mat) size += m.length;
         IntArray ar = new IntArray(size);
         for (int[] m : mat) ar.add(m);
         int[] res = ar.getAll();
         Arrays.sort(res);
         return res;
+    }
+
+    public static int[] merge(Collection<int[]> mat) {
+        int[][] mat2 = new int[mat.size()][];
+        int i = 0;
+        for (int[] ar : mat) {
+            mat2[i++] = ar;
+        }
+        return merge(mat2);
+    }
+
+    public static int[] merge(int[][] mat) {
+        int size = 0;
+        int[] is = new int[mat.length];
+        for (int[] m : mat) size += m.length;
+        IntArray ar = new IntArray(size);
+        int max = 0;
+        for (int[] row : mat) {
+            if (row.length > 0 && row[row.length - 1] > max) max = row[row.length - 1];
+        }
+        int min = 0;
+        while (min < max) {
+            // select next min0
+            for (int k = 0; k < mat.length; k++) {
+                if (is[k] < mat[k].length) {
+                    min = mat[k][is[k]];
+                    break;
+                }
+            }
+            // find min with min0
+            for (int k = 0; k < mat.length; k++) {
+                if (is[k] < mat[k].length && min > mat[k][is[k]]) min = mat[k][is[k]];
+            }
+            // increment index for arrays with min value
+            for (int k = 0; k < mat.length; k++) {
+                if (is[k] < mat[k].length && min == mat[k][is[k]]) is[k]++;
+            }
+            ar.add(min);
+        }
+        return ar.getCopy();
     }
 
     public static int[] merge(int[] a, int[] b) {
@@ -106,5 +146,17 @@ public class Util {
             answer[k++] = b[j++];
 
         return k == answer.length ? answer : Arrays.copyOf(answer, k);
+    }
+
+    public static <K, V extends Comparable<? super V>> List<K> sortAscByValue(Map<K, V> map) {
+        List<Map.Entry<K, V>> list = new ArrayList<>(map.entrySet());
+        list.sort(Map.Entry.comparingByValue());
+
+        List<K> result = new ArrayList<>(map.size() + 1);
+        for (Map.Entry<K, V> entry : list) {
+            result.add(entry.getKey());
+        }
+
+        return result;
     }
 }
