@@ -2,8 +2,6 @@ package org.ionkin.search;
 
 import com.google.common.collect.Lists;
 import org.ionkin.Ranking;
-import org.ionkin.search.map.IndexMap;
-import org.ionkin.search.map.SearchMap;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -143,43 +141,33 @@ public class Logic {
         return res.getCopy();
     }
 
-    static int[] simple(Set<LightString> wordsSet, IndexMap indexMap, SearchMap searchMap, int countInd, int countTop) {
-        int sumIdf = 0;
-        Map<LightString, Integer> wordIdfMap = new HashMap<>();
-        for (LightString word : wordsSet) {
-            int wordIdf = Ranking.idf(indexMap.get(word).getIndexAsBytes());
-            wordIdfMap.put(word, wordIdf);
-            sumIdf += wordIdf;
-        }
-        List<LightString> words = Lists.reverse(Util.sortAscByValue(wordIdfMap));
+    static int[] simple(Map<LightString, Integer> idfs, Map<LightString, Index> index,
+                        Map<LightString, Positions> positions, int countInd, int countTop) {
+        final AtomicInteger sumIdf = new AtomicInteger();
+        idfs.forEach((k, v) -> sumIdf.addAndGet(v));
+
+        List<LightString> words = Lists.reverse(Util.sortAscByValue(idfs));
         Map<LightString, int[]> wordIndexMap = new HashMap<>();
         int diffExpectedCount = 0;
         for (LightString word : words) {
-            int locCount = (int) (((long) wordIdfMap.get(word)) * countInd / sumIdf) + diffExpectedCount;
-            int[] locInd = indexMap.get(word).getIndex(locCount);
+            int locCount = (int) (((long) idfs.get(word)) * countInd / sumIdf.get()) + diffExpectedCount;
+            int[] locInd = index.get(word).getIndex(locCount);
             wordIndexMap.put(word, locInd);
-            diffExpectedCount += wordIdfMap.get(word) - locInd.length;
+            diffExpectedCount += idfs.get(word) - locInd.length;
         }
         Collection<int[]> indices = wordIndexMap.values();
         int[] inds = Util.merge(indices);
-        return rankingTfIdf(inds, words.toArray(new LightString[0]), searchMap, indexMap, countTop);
+        return rankingTfIdf(inds, idfs, index, positions, countTop);
     }
 
-    static int[] rankingTfIdf(int[] docIds0, LightString[] words, SearchMap searchMap, IndexMap indexMap, int count) {
+    static int[] rankingTfIdf(int[] docIds0, Map<LightString, Integer> idfs, Map<LightString, Index> index,
+                              Map<LightString, Positions> positions, int count) {
         TreeMap<Integer, IntArray> indScope = new TreeMap<>(Integer::compare);
 
-        int n = words.length;
         int nInScope = 0;
 
-        Map<LightString, Integer> idfs = new HashMap<>();
-        Map<LightString, Positions> wordPositionsMap = new HashMap<>();
-        for (int i = 0; i < n; i++) {
-            idfs.put(words[i], Ranking.idf(indexMap.get(words[i]).getIndexAsBytes()));
-            wordPositionsMap.put(words[i], searchMap.get(words[i]));
-        }
-
         for (int docId : docIds0) {
-            int scope = scope(wordPositionsMap, idfs, docId);
+            int scope = scope(index, positions, idfs, docId);
             if (indScope.isEmpty() || scope >= indScope.firstKey()) {
                 IntArray list = indScope.getOrDefault(scope, new IntArray());
                 list.add(docId);
@@ -203,12 +191,15 @@ public class Logic {
         return (res.size() > count) ? Arrays.copyOf(res.getAll(), count) : res.getCopy();
     }
 
-    private static int scope(Map<LightString, Positions> wordPositionsMap, Map<LightString, Integer> idfs, int docId) {
+    private static int scope(Map<LightString, Index> wordIndexMap, Map<LightString, Positions> wordPositionsMap,
+                             Map<LightString, Integer> idfs, int docId) {
         AtomicInteger scope = new AtomicInteger(0);
         wordPositionsMap.forEach((k, pos) -> {
-            BytesRange poss = pos.positions(docId);
-            if (poss.length() != 0) {
-                scope.addAndGet(Ranking.tfIdf(idfs.get(k), poss));
+            if (wordIndexMap.get(k).containsDocWithGoToEffect(docId)) {
+                BytesRange poss = pos.positions(docId);
+                if (poss.length() != 0) {
+                    scope.addAndGet(Ranking.tfIdf(idfs.get(k), poss));
+                }
             }
         });
         return scope.get();

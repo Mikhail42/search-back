@@ -15,7 +15,6 @@ public class TextArticleIteratorTest {
         Page mamontPage = TextArticleIterator.readPage(11);
         assertEquals(11, mamontPage.getId());
         assertEquals("Мамонты", mamontPage.getTitle());
-        assertEquals("https://ru.wikipedia.org/wiki?curid=11", mamontPage.generateUrl());
         assertTrue(mamontPage.getContent().startsWith("\nМамонты\n\nМа́монты () — вымерший род млекопитающих"));
     }
 

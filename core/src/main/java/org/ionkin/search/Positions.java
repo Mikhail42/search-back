@@ -84,7 +84,6 @@ public class Positions {
             int docPos = getPosByDocId(docId, startPos);
             return getRangeByPackedPos(docPos);
         } catch (Exception e) {
-            e.printStackTrace();
             return new BytesRange(new byte[0]);
         }
     }
