@@ -22,6 +22,7 @@ import static org.scijava.parse.Operators.*;
 
 public class EvaluatorPerformance {
     private static Logger logger = LoggerFactory.getLogger(EvaluatorPerformance.class);
+    private static final int BOOL_COUNT = 100_000;
 
     private final int[] allIds;
     private final IndexMap indexMap;
@@ -30,8 +31,8 @@ public class EvaluatorPerformance {
 
     public static void main(String... args) throws Exception {
         // writeTestMap();
-        //csv();
-        EvaluatorPerformance evaluator = load(Util.basePath + "test.index", Util.basePath + "test.posit");
+        csv();
+        /*EvaluatorPerformance evaluator = load(Util.basePath + "test.index", Util.basePath + "test.posit");
 
         long t1 = System.currentTimeMillis();
         //logger.info(Arrays.toString(evaluator.evaluateDocIds("сколько ног у многоножки", 10)));
@@ -143,7 +144,7 @@ public class EvaluatorPerformance {
 
         for (String q : qs) {
             try {
-                int[] docIds = evaluator.evaluateDocIds(q, 10);
+                int[] docIds = evaluator.evaluate(q, 10).stream().mapToInt(Pair::getKey).toArray();
                 if (docIds.length > 0) {
                     sb.append("\"" + q + "\",1,\"https://ru.wikipedia.org/?curid=" + docIds[0] + "\",0\n");
                 }
@@ -253,7 +254,7 @@ public class EvaluatorPerformance {
         Map<Integer, String> res = new HashMap<>();
         Set<LightString> wordsAsSet = Stream.of(words).collect(Collectors.toSet());
         int n = words.length;
-        byte[] idfs = new byte[n];
+        int[] idfs = new int[n];
         Map<LightString, Positions> wordPositionsMap = new HashMap<>();
         for (int i = 0; i < n; i++) {
             idfs[i] = Ranking.idf(indexMap.get(words[i]).getIndexAsBytes());
@@ -294,12 +295,28 @@ public class EvaluatorPerformance {
     }
 
     public List<Pair<Integer, String>> evaluate(String query, int count) throws IOException {
-        SyntaxTree tree = createSyntaxTree(query);
-        logger.debug("expression three '{}'", tree);
-        List<LightString> wordsAsList = queryWords(tree).stream().map(w -> lemms.getOrDefault(w, w)).collect(Collectors.toList());
-        LightString[] words = wordsAsList.toArray(new LightString[0]);
+        logger.debug("start evaluate '{}'", query);
+        String normalized = Normalizer.normalize(query);
+        logger.debug("normalized '{}'", normalized);
+        final int[] docIds;
+        final LightString[] words;
+        if (isBoolQuery(normalized)) {
+            SyntaxTree tree = createSyntaxTree(normalized);
+            logger.debug("expression three '{}'", tree);
+            List<LightString> wordsAsList =
+                    queryWords(tree).stream().map(w -> lemms.getOrDefault(w, w)).collect(Collectors.toList());
+            words = wordsAsList.toArray(new LightString[0]);
 
-        int[] docIds = evaluate(tree, words, count);
+            docIds = evaluate(tree, words, count);
+        } else {
+            Set<LightString> wordsSet = Stream.of(query.split(" "))
+                    .map(LightString::new)
+                    .map(x -> this.lemms.getOrDefault(x, x))
+                    .collect(Collectors.toSet());
+            docIds = Logic.simple(wordsSet, indexMap, this.positions, BOOL_COUNT, count);
+            words = wordsSet.toArray(new LightString[0]);
+        }
+
         Map<Integer, String> snippets = snippets(docIds, words);
 
         List<Pair<Integer, String>> res = new LinkedList<>();
@@ -309,18 +326,8 @@ public class EvaluatorPerformance {
         return res;
     }
 
-    @Deprecated
-    public int[] evaluateDocIds(String query, int count) {
-        SyntaxTree tree = createSyntaxTree(query);
-        logger.debug("expression three '{}'", tree);
-        List<LightString> wordsAsList = queryWords(tree).stream().map(w -> lemms.getOrDefault(w, w)).collect(Collectors.toList());
-        LightString[] words = wordsAsList.toArray(new LightString[0]);
-
-        return evaluate(tree, words, count);
-    }
-
     public int[] evaluate(SyntaxTree tree, LightString[] words, int count) {
-        int[] docIds0 = evaluate(tree, 200_000);
+        int[] docIds0 = evaluate(tree, BOOL_COUNT);
         return Logic.rankingTfIdf(docIds0, words, this.positions, this.indexMap, count);
     }
 
@@ -329,28 +336,21 @@ public class EvaluatorPerformance {
         return pattern.matcher(query).find();
     }
 
-    static SyntaxTree createSyntaxTree(String query) {
-        logger.debug("start evaluate '{}'", query);
-        String normalized = Normalizer.normalize(query);
+    static SyntaxTree createSyntaxTree(String normalized) {
+        //normalized = normalized.replaceAll(" ", " && ");
+        Matcher spaceMatcher = Pattern.compile(" ([^&|/])").matcher(normalized);
+        if (spaceMatcher.find()) {
+            normalized = spaceMatcher.replaceAll(" && $1");
+        }
         logger.debug("normalized '{}'", normalized);
-        if (isBoolQuery(query)) {
-            //normalized = normalized.replaceAll(" ", " && ");
-            Matcher spaceMatcher = Pattern.compile(" ([^&|/])").matcher(normalized);
-            if (spaceMatcher.find()) {
-                normalized = spaceMatcher.replaceAll(" && $1");
-            }
-            logger.debug("normalized '{}'", normalized);
-            Matcher andLeftMatcher = Pattern.compile("&& ([&|/])").matcher(normalized);
-            if (andLeftMatcher.find()) {
-                normalized = andLeftMatcher.replaceAll("$1");
-            }
-            logger.debug("normalized '{}'", normalized);
-            Matcher andRightMatcher = Pattern.compile("([&|/]) &&").matcher(normalized);
-            if (andRightMatcher.find()) {
-                normalized = andRightMatcher.replaceAll("$1");
-            }
-        } else {
-            normalized = normalized.replaceAll(" ", " || ");
+        Matcher andLeftMatcher = Pattern.compile("&& ([&|/])").matcher(normalized);
+        if (andLeftMatcher.find()) {
+            normalized = andLeftMatcher.replaceAll("$1");
+        }
+        logger.debug("normalized '{}'", normalized);
+        Matcher andRightMatcher = Pattern.compile("([&|/]) &&").matcher(normalized);
+        if (andRightMatcher.find()) {
+            normalized = andRightMatcher.replaceAll("$1");
         }
         logger.debug("normalized '{}'", normalized);
         return new ExpressionParser().parseTree(normalized);

@@ -1,11 +1,12 @@
 package org.ionkin.search;
 
-import com.google.common.primitives.Ints;
+import com.google.common.collect.Lists;
 import org.ionkin.Ranking;
 import org.ionkin.search.map.IndexMap;
 import org.ionkin.search.map.SearchMap;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Logic {
 
@@ -142,31 +143,45 @@ public class Logic {
         return res.getCopy();
     }
 
+    static int[] simple(Set<LightString> wordsSet, IndexMap indexMap, SearchMap searchMap, int countInd, int countTop) {
+        int sumIdf = 0;
+        Map<LightString, Integer> wordIdfMap = new HashMap<>();
+        for (LightString word : wordsSet) {
+            int wordIdf = Ranking.idf(indexMap.get(word).getIndexAsBytes());
+            wordIdfMap.put(word, wordIdf);
+            sumIdf += wordIdf;
+        }
+        List<LightString> words = Lists.reverse(Util.sortAscByValue(wordIdfMap));
+        Map<LightString, int[]> wordIndexMap = new HashMap<>();
+        int diffExpectedCount = 0;
+        for (LightString word : words) {
+            int locCount = (int) (((long) wordIdfMap.get(word)) * countInd / sumIdf) + diffExpectedCount;
+            int[] locInd = indexMap.get(word).getIndex(locCount);
+            wordIndexMap.put(word, locInd);
+            diffExpectedCount += wordIdfMap.get(word) - locInd.length;
+        }
+        Collection<int[]> indices = wordIndexMap.values();
+        int[] inds = Util.merge(indices);
+        return rankingTfIdf(inds, words.toArray(new LightString[0]), searchMap, indexMap, countTop);
+    }
+
     static int[] rankingTfIdf(int[] docIds0, LightString[] words, SearchMap searchMap, IndexMap indexMap, int count) {
-        TreeMap<Integer, List<Integer>> indScope = new TreeMap<>(Integer::compare);
-        indScope.put(0, new LinkedList<>());
+        TreeMap<Integer, IntArray> indScope = new TreeMap<>(Integer::compare);
 
         int n = words.length;
         int nInScope = 0;
 
-        byte[] idfs = new byte[n];
+        Map<LightString, Integer> idfs = new HashMap<>();
         Map<LightString, Positions> wordPositionsMap = new HashMap<>();
         for (int i = 0; i < n; i++) {
-            idfs[i] = Ranking.idf(indexMap.get(words[i]).getIndexAsBytes());
+            idfs.put(words[i], Ranking.idf(indexMap.get(words[i]).getIndexAsBytes()));
             wordPositionsMap.put(words[i], searchMap.get(words[i]));
         }
 
         for (int docId : docIds0) {
-            int scope = 0;
-            for (int i = 0; i < n; i++) {
-                BytesRange poss = wordPositionsMap.get(words[i]).positions(docId);
-                if (poss.length() != 0) {
-                    scope += Ranking.tfIdf(idfs[i], poss);
-                }
-            }
-
-            if (scope >= indScope.firstKey()) {
-                List<Integer> list = indScope.getOrDefault(scope, new LinkedList<>());
+            int scope = scope(wordPositionsMap, idfs, docId);
+            if (indScope.isEmpty() || scope >= indScope.firstKey()) {
+                IntArray list = indScope.getOrDefault(scope, new IntArray());
                 list.add(docId);
                 nInScope++;
 
@@ -181,18 +196,22 @@ public class Logic {
             }
         }
 
-        IntArray res = new IntArray();
-        indScope.forEach((k, v) -> {
-            res.add(Ints.toArray(v));
-        });
-        int[] result = res.getCopy();
-        Arrays.sort(result);
-        for (int i=0; i<result.length/2; i++) {
-            int t = result[i];
-            result[i] = result[result.length - 1 - i];
-            result[result.length - 1 - i] = t;
+        IntArray res = new IntArray(nInScope);
+        while (!indScope.isEmpty()) {
+            res.add(indScope.pollLastEntry().getValue().getCopy());
         }
-        return (result.length > count) ? Arrays.copyOf(result, count) : result;
+        return (res.size() > count) ? Arrays.copyOf(res.getAll(), count) : res.getCopy();
+    }
+
+    private static int scope(Map<LightString, Positions> wordPositionsMap, Map<LightString, Integer> idfs, int docId) {
+        AtomicInteger scope = new AtomicInteger(0);
+        wordPositionsMap.forEach((k, pos) -> {
+            BytesRange poss = pos.positions(docId);
+            if (poss.length() != 0) {
+                scope.addAndGet(Ranking.tfIdf(idfs.get(k), poss));
+            }
+        });
+        return scope.get();
     }
 
     /**
