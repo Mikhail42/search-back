@@ -16,6 +16,7 @@
         <module>lemmatization</module>
         <module>ranking</module>
         <module>snippet</module>
+        <module>collocation</module>
     </modules>
 
     <properties>

@@ -50,7 +50,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>org.ionkin.search.IndexWorker</mainClass>
+                            <mainClass>org.ionkin.search.Indexer</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
