@@ -1,24 +1,25 @@
 package org.ionkin.search.map;
 
-import org.ionkin.search.IO;
+import org.ionkin.search.ByteArray;
 import org.ionkin.search.LightString;
+import org.ionkin.search.VariableByte;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
-public class IntStringTranslator extends IntTranslator<LightString>implements Serializable {
-
-    private static final long serialVersionUID = 1717040153505674621L;
+public class IntStringTranslator extends IntTranslator<LightString> implements Serializable {
 
     @Override
     public byte[] serialize(Integer key, LightString value) {
-        byte[] bytes = new byte[4 + 1 + value.length()];
-        IO.putInt(bytes, key, 0);
-        IO.putString(bytes, value, 4);
-        return bytes;
+        ByteArray ar = new ByteArray(value.length() + 1 + VariableByte.compressedLength(key));
+        ar.addVb(key);
+        ar.add(value);
+        return ar.getAll();
     }
 
     @Override
     public LightString deserializeValue(byte[] packed) {
-        return IO.readString(packed, 4);
+        int pos = VariableByte.getNextPos(packed, 0);
+        return new LightString(Arrays.copyOfRange(packed, packed[pos] + 1, packed.length));
     }
 }
