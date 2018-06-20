@@ -2,9 +2,7 @@ package org.ionkin.search;
 
 import javafx.util.Pair;
 import org.ionkin.Ranking;
-import org.ionkin.search.map.IndexMap;
-import org.ionkin.search.map.SearchMap;
-import org.ionkin.search.map.StringStringMap;
+import org.ionkin.search.map.*;
 import org.scijava.parse.SyntaxTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,11 +18,34 @@ public class EvaluatorPerformance {
     private static final int BOOL_COUNT = 100_000;
 
     private final IndexMap indexMap;
+    private final IndexMap titleIndex;
     private final SearchMap positions;
     private final StringStringMap lemms;
     private final SyntaxTreeHelper syntaxTreeHelper;
 
+    public SearchMap getPositions() {
+        return positions;
+    }
+
+    public StringStringMap getLemms() {
+        return lemms;
+    }
+
     public static void main(String... args) throws Exception {
+        // TODO
+        loadTest();
+    }
+
+    public static EvaluatorPerformance loadTestTest() throws IOException {
+        byte[] docsAsBytes = IO.read(Util.basePath + "docids.chsi");
+        int[] allIds = Compressor.decompressVb(docsAsBytes);
+
+        IndexMap indexMap = new IndexMap(new StringBytesMap(Util.basePath + "test.index"));
+        IndexMap titleIndexMap = new IndexMap(new StringBytesMap(Util.basePath + "testTitle.index"));
+        SearchMap searchMap = new SearchMap(new StringPositionsMap(Util.basePath + "test.posit"));
+        StringStringMap lemms = new StringStringMap(Util.wordLemmPath);
+
+        return new EvaluatorPerformance(searchMap, indexMap, titleIndexMap, allIds, lemms);
     }
 
     public static EvaluatorPerformance loadTest() throws IOException {
@@ -32,14 +53,16 @@ public class EvaluatorPerformance {
         int[] allIds = Compressor.decompressVb(docsAsBytes);
 
         IndexMap indexMap = new IndexMap(Util.basePath + "indexlemm.im");
-        SearchMap searchMap = new SearchMap(Util.basePath + "positionslemm.sm");
+        IndexMap titleIndex = new IndexMap(new StringBytesMap(Util.basePath + "titleindex.sbm"));
+        SearchMap searchMap = new SearchMap(Util.basePath +  "positionslemm.sm");
         StringStringMap lemms = new StringStringMap(Util.wordLemmPath);
 
-        return new EvaluatorPerformance(searchMap, indexMap, allIds, lemms);
+        return new EvaluatorPerformance(searchMap, indexMap, titleIndex, allIds, lemms);
     }
 
-    private EvaluatorPerformance(SearchMap positions, IndexMap indexMap, int[] allIds, StringStringMap lemms) {
+    private EvaluatorPerformance(SearchMap positions, IndexMap indexMap, IndexMap titleIndex, int[] allIds, StringStringMap lemms) {
         this.indexMap = indexMap;
+        this.titleIndex = titleIndex;
         this.positions = positions;
         this.lemms = lemms;
         syntaxTreeHelper = new SyntaxTreeHelper(positions, indexMap, lemms, allIds);
@@ -54,12 +77,13 @@ public class EvaluatorPerformance {
         final Collection<LightString> words = getWords(normalized, isBool);
 
         final Map<LightString, Index> index = indexMap(words);
+        final Map<LightString, Index> titleIndex = titleIndexMap(words);
         final Map<LightString, Positions> positions = positionsMap(words);
         final Map<LightString, Integer> idfs = idfs(index);
 
         final int[] docIds = isBool
-                ? evaluate(normalized, idfs, index, positions, count)
-                : Logic.simple(idfs, index, positions, BOOL_COUNT, count);
+                ? evaluate(normalized, idfs, index, titleIndex, positions, count)
+                : Logic.simple(idfs, index, titleIndex, positions, BOOL_COUNT, count);
 
         final Map<Integer, QueryPage> snippets = snippets(docIds, idfs, positions);
 
@@ -90,14 +114,14 @@ public class EvaluatorPerformance {
     }
 
     private int[] evaluate(String normalized, Map<LightString, Integer> idfs, Map<LightString, Index> index,
-                           Map<LightString, Positions> positions, int count) {
+                           Map<LightString, Index> titleIndex, Map<LightString, Positions> positions, int count) {
         SyntaxTree tree = SyntaxTreeHelper.create(normalized);
         int[] docIds0 = syntaxTreeHelper.evaluate(tree, BOOL_COUNT);
-        return Logic.rankingTfIdf(docIds0, idfs, index, positions, count);
+        return Logic.ranking(docIds0, idfs, index, titleIndex, positions, count);
     }
 
     private static boolean isBoolQuery(String query) {
-        Pattern pattern = Pattern.compile("[&|!()\\[\\]{}/«»\"]");
+        Pattern pattern = Pattern.compile("[&|!()\\[\\]{}/\"]");
         return pattern.matcher(query).find();
     }
 
@@ -109,12 +133,20 @@ public class EvaluatorPerformance {
         return res;
     }
 
-    private Map<LightString, Index> indexMap(Collection<LightString> words) {
+    private static Map<LightString, Index> indexMap(Collection<LightString> words, IndexMap index) {
         Map<LightString, Index> res = new HashMap<>();
         for (LightString w : words) {
-            res.put(w, this.indexMap.get(w));
+            res.put(w, index.get(w));
         }
         return res;
+    }
+
+    private Map<LightString, Index> indexMap(Collection<LightString> words) {
+        return indexMap(words, this.indexMap);
+    }
+
+    private Map<LightString, Index> titleIndexMap(Collection<LightString> words) {
+        return indexMap(words, this.titleIndex);
     }
 
     private Map<LightString, Integer> idfs(Map<LightString, Index> indexMap) {
