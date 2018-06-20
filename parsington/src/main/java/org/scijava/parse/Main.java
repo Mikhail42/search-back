@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 public class Main {
 
     public static void main(String... args) {
-        String exp = "«Слово && о && полку && Игореве» / 5";
+        String exp = "\"Слово && о && полку && Игореве\" / 5";
         SyntaxTree tree = new ExpressionParser().parseTree(exp);
         System.err.println(tree.toString());
 

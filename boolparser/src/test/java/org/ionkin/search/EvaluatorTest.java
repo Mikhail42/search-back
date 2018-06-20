@@ -38,9 +38,9 @@ public class EvaluatorTest {
     @Test
     public void wordtest() {
         int[] ids = evaluator.evaluateDocIds("полку Игореве", 50);
-        int[] polk = evaluator.evaluateDocIds("«полку Игореве»", 50);
-        evaluator.evaluateDocIds("«Слово о полку Игореве»", 50);
-        evaluator.evaluateDocIds("«Слово && о полку && Игореве» / 4", 50);
+        int[] polk = evaluator.evaluateDocIds("\"полку Игореве\"", 50);
+        evaluator.evaluateDocIds("\"Слово о полку Игореве\"", 50);
+        evaluator.evaluateDocIds("\"Слово && о полку && Игореве\" / 4", 50);
     }
 
     @Test
@@ -55,7 +55,7 @@ public class EvaluatorTest {
 
     @Test
     public void evaluateQuotes() {
-        int[] indices1 = evaluator.evaluateDocIds("«полку Игореве»", 5);
+        int[] indices1 = evaluator.evaluateDocIds("\"полку Игореве\"", 5);
         int[] indices2 = evaluator.evaluateDocIds("полку Игореве", 5);
         assertTrue(Arrays.equals(indices1, indices2));
         assertTrue(Arrays.equals(indices1, new int[]{9, 27, 465, 525, 860}));
