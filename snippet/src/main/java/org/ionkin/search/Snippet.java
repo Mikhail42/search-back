@@ -14,11 +14,11 @@ import java.util.regex.Pattern;
 
 public class Snippet {
 
-    private static final int distance = 20;
+    static final int DISTANCE = 20;
 
     public static Map<Integer, QueryPage> snippets(int[] ids, Map<LightString, Integer> idfs,
-                                                Map<LightString, Positions> wordPositionsMap,
-                                                StringStringMap lemms) throws IOException {
+                                                   Map<LightString, Positions> wordPositionsMap,
+                                                   StringStringMap lemms) throws IOException {
         Map<Integer, QueryPage> res = new HashMap<>();
         Set<LightString> wordsAsSet = new HashSet<>(idfs.keySet());
 
@@ -35,26 +35,26 @@ public class Snippet {
         return res;
     }
 
-    private static String pretty(String snip) {
+    static String pretty(String snip) {
         return snip.replaceAll("\\(\\)", "")
                 .replaceAll("\\s+", " ")
                 .replaceAll(" %", "\u2009%");
     }
 
-    private static String snippet(Map<LightString, int[]> wordPos, Map<LightString, Integer> idfs, Page page) {
+    static String snippet(Map<LightString, int[]> wordPos, Map<LightString, Integer> idfs, Page page) {
         int[][] mat = new int[wordPos.size()][];
         int[] idfsAr = new int[wordPos.size()];
         AtomicInteger ai = new AtomicInteger();
         wordPos.forEach((word, pos) -> {
             mat[ai.get()] = pos;
-            idfsAr[ai.get()] = idfs.get(word);
+            idfsAr[ai.getAndIncrement()] = idfs.get(word);
         });
 
         int optPos = optimumSnippetPosition(mat, idfsAr);
-        return getSnippet(page.getContent(), optPos);
+        return getSnippetText(page.getContent(), optPos);
     }
 
-    private static int optimumSnippetPosition(int[][] wordPositions, int[] idfs) {
+    static int optimumSnippetPosition(int[][] wordPositions, int[] idfs) {
         int bestPos = 0;
         int bestScope = -1;
 
@@ -62,10 +62,12 @@ public class Snippet {
         int[] pos = Util.mergeSimple(wordPositions);
         for (int p : pos) {
             int scope = 0;
-            for (int i = 0; i < distance; i++) {
+            for (int i = 0; i < DISTANCE; i++) {
+                Set<Integer> added = new HashSet<>();
                 for (int k = 0; k < wordPositions.length; k++) {
                     if (is[k] < wordPositions[k].length && wordPositions[k][is[k]] == p + i) {
-                        scope += Ranking.tfIdf(idfs[k], wordPositions[k]);
+                        int tfIdf = Ranking.tfIdf(idfs[k], wordPositions[k]);
+                        scope += added.contains(k) ? 1 : tfIdf;
                         is[k]++;
                     }
                 }
@@ -79,7 +81,7 @@ public class Snippet {
         return bestPos;
     }
 
-    private static String selectQueryWords(String snip, Set<LightString> wordsAsSet, StringStringMap lemms) {
+    static String selectQueryWords(String snip, Set<LightString> wordsAsSet, StringStringMap lemms) {
         String[] snipWords = Util.splitPattern.split(snip);
         for (String snipWord : snipWords) {
             LightString norm1 = new LightString(Util.normalize(snipWord));
@@ -92,14 +94,14 @@ public class Snippet {
                 }
             }
         }
-        return snip.replaceAll("<b><b>", "<b>")
-                .replaceAll("\\s+", " ")
+        return snip.replaceAll("\\s+", " ")
+                .replaceAll("<b><b>", "<b>")
                 .replaceAll("</b></b>", "</b>")
                 .replaceAll("<b></b>", "")
                 .replaceAll("</b> <b>", " ");
     }
 
-    private static String getSnippet(String content, int from) {
+    static String getSnippetText(String content, int from) {
         Matcher wordMatcher = Util.wordPattern.matcher(content);
         Matcher splitMatcher = Util.splitPattern.matcher(content);
         int currentIndex = 0;
@@ -108,7 +110,7 @@ public class Snippet {
         int snipStart = 0;
         int snipEnd = 0;
 
-        while (currentIndex < content.length() && nWord < from + distance) {
+        while (currentIndex < content.length() && nWord < from + DISTANCE) {
             int start = indexOf(wordMatcher, currentIndex);
             if (start == -1) break;
             int end = indexOf(splitMatcher, start);
@@ -122,7 +124,7 @@ public class Snippet {
                 if (nWord == from) {
                     snipStart = start;
                 }
-                if (nWord == from + distance) {
+                if (nWord == from + DISTANCE) {
                     snipEnd = end;
                 }
             }
@@ -136,7 +138,7 @@ public class Snippet {
         return content.substring(snipStart, snipEnd);
     }
 
-    private static int indexOf(Matcher matcher, int fromIndex) {
+    static int indexOf(Matcher matcher, int fromIndex) {
         return matcher.find(fromIndex) ? matcher.start() : -1;
     }
 }
