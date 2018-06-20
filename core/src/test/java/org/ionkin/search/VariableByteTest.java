@@ -12,7 +12,7 @@ public class VariableByteTest {
     public void compressUncompress() {
         int[] ar = new int[]{1, 4, 9, 10, 100, 400, 256, 257, 127, 128, 257, 129, 10000, 10000000};
         byte[] comp = VariableByte.compress(ar);
-        int[] uncomp = VariableByte.uncompress(comp, ar.length);
+        int[] uncomp = VariableByte.uncompress(comp, new IntWrapper(), ar.length);
         assertTrue(Arrays.equals(ar, uncomp));
     }
 
@@ -35,7 +35,7 @@ public class VariableByteTest {
     @Test
     public void compress() {
         byte[] comp = VariableByte.compress(128 + 13);
-        int[] ar = VariableByte.uncompress(comp, 1);
+        int[] ar = VariableByte.uncompress(comp, new IntWrapper(), 1);
         assertArrayEquals(new int[]{128 + 13}, ar);
         assertArrayEquals(new byte[]{13, (byte)(1 | 128)}, comp);
     }

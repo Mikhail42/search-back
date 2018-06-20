@@ -1,5 +1,6 @@
 package org.ionkin.search.map;
 
+import org.ionkin.search.IntWrapper;
 import org.ionkin.search.VariableByte;
 
 import java.io.Serializable;
@@ -15,7 +16,7 @@ public class IntIntTranslator extends IntTranslator<Integer> implements Serializ
 
     @Override
     public Integer deserializeValue(byte[] packed) {
-        int[] ar = VariableByte.uncompress(packed, 2);
+        int[] ar = VariableByte.uncompress(packed, new IntWrapper(0), 2);
         return ar[1];
     }
 }

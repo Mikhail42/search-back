@@ -1,6 +1,7 @@
 package org.ionkin.search.map;
 
 import javafx.util.Pair;
+import org.ionkin.search.IntWrapper;
 import org.ionkin.search.VariableByte;
 
 import java.io.Serializable;
@@ -14,7 +15,7 @@ public class IntIntIntTranslator extends IntTranslator<Pair<Integer, Integer>> i
 
     @Override
     public Pair<Integer, Integer> deserializeValue(byte[] packed) {
-        int[] ar = VariableByte.uncompress(packed, 3);
+        int[] ar = VariableByte.uncompress(packed, new IntWrapper(), 3);
         return new Pair<>(ar[1], ar[2]);
     }
 }

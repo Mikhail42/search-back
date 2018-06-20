@@ -85,15 +85,15 @@ public class VariableByte {
         return count;
     }
 
-    public static int[] uncompress(byte[] in, int take) {
-        return uncompress(in, 0, in.length, take);
+    public static int[] uncompress(byte[] in, IntWrapper from, int take) {
+        return uncompress(in, from, in.length, take);
     }
 
-    public static int[] uncompress(byte[] in, int from, int until, int take) {
+    public static int[] uncompress(byte[] in, IntWrapper from, int until, int take) {
         List<Integer> res = new ArrayList<>();
         int v;
         int count = 0;
-        int p = from;
+        int p = from.get();
         for (; p < until && count < take; count++, res.add(v)) {
             v = in[p] & 0x7F;
             if (in[p] < 0) {
@@ -118,7 +118,7 @@ public class VariableByte {
             v = ((in[p + 4] & 0x7F) << 28) | v;
             p += 5;
         }
-
+        from.set(p);
         return Ints.toArray(res);
     }
 
