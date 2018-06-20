@@ -60,21 +60,21 @@ public class Index {
     public static Index deserialize(byte[] packed, int from) {
         int indexLength = VariableByte.uncompressFirst(packed, from);
         IntWrapper pos = new IntWrapper(VariableByte.compressedLength(indexLength) + from);
-        int[] jumpPow4 = Compressor.decompressS9(packed, pos, jumpPow4Size(indexLength));
-        int[] jumpSqr = Compressor.decompressS9(packed, pos, jumpSqrSize(indexLength));
-        int[] jumpRef = Compressor.decompressS9(packed, pos, jumpSize(indexLength));
-        int[] jumpDocId = Compressor.decompressS9(packed, pos, jumpSize(indexLength));
+        int[] jumpPow4 = Compressor.decompressVb(packed, pos, jumpPow4Size(indexLength));
+        int[] jumpSqr = Compressor.decompressVb(packed, pos, jumpSqrSize(indexLength));
+        int[] jumpRef = Compressor.decompressVb(packed, pos, jumpSize(indexLength));
+        int[] jumpDocId = Compressor.decompressVb(packed, pos, jumpSize(indexLength));
         BytesRange index = new BytesRange(packed, pos.get(), packed.length);
         return new Index(indexLength, jumpPow4, jumpSqr, jumpRef, jumpDocId, index);
     }
 
     public byte[] serialize() {
         byte[] size = VariableByte.compress(indexLength);
-        int[] jumpPow4Comp = (jumpPow4.length != 0) ? Compressor.compressS9WithoutMemory(jumpPow4) : new int[0];
-        int[] jumpSqrComp = (jumpSqr.length != 0) ? Compressor.compressS9WithoutMemory(jumpSqr) : new int[0];
-        int[] jumpRefComp = (jumpRef.length != 0) ? Compressor.compressS9WithoutMemory(jumpRef) : new int[0];
-        int[] jumpDocIdComp = (jumpSum.length != 0) ? Compressor.compressS9WithoutMemory(jumpSum) : new int[0];
-        int jumpCompByteSize = (jumpDocIdComp.length + jumpRefComp.length + jumpSqrComp.length + jumpPow4Comp.length) * 4;
+        byte[] jumpPow4Comp = (jumpPow4.length != 0) ? Compressor.compressVbWithMemory(jumpPow4) : new byte[0];
+        byte[] jumpSqrComp = (jumpSqr.length != 0) ? Compressor.compressVbWithMemory(jumpSqr) : new byte[0];
+        byte[] jumpRefComp = (jumpRef.length != 0) ? Compressor.compressVbWithMemory(jumpRef) : new byte[0];
+        byte[] jumpDocIdComp = (jumpSum.length != 0) ? Compressor.compressVbWithMemory(jumpSum) : new byte[0];
+        int jumpCompByteSize = (jumpDocIdComp.length + jumpRefComp.length + jumpSqrComp.length + jumpPow4Comp.length);
 
         ByteBuffer buf = ByteBuffer.allocate(size.length + jumpCompByteSize + index.length());
         buf.put(size);

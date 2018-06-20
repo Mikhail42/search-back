@@ -47,10 +47,10 @@ public class Positions {
 
     public byte[] serialize() {
         byte[] size = VariableByte.compress(indexLength);
-        int[] jumpSqrComp = (jumpSqr.length != 0) ? Compressor.compressS9WithoutMemory(jumpSqr) : new int[0];
-        int[] jumpComp = (jump.length != 0) ? Compressor.compressS9WithoutMemory(jump) : new int[0];
+        byte[] jumpSqrComp = (jumpSqr.length != 0) ? Compressor.compressVbWithoutMemory(jumpSqr) : new byte[0];
+        byte[] jumpComp = (jump.length != 0) ? Compressor.compressVbWithoutMemory(jump) : new byte[0];
 
-        ByteBuffer buf = ByteBuffer.allocate(size.length + (jumpComp.length + jumpSqrComp.length) * 4 + indexPositions.length);
+        ByteBuffer buf = ByteBuffer.allocate(size.length + (jumpComp.length + jumpSqrComp.length) + indexPositions.length);
         buf.put(size);
         for (int jS : jumpSqrComp) buf.putInt(jS);
         for (int j : jumpComp) buf.putInt(j);
@@ -63,8 +63,8 @@ public class Positions {
         int indexLength = VariableByte.uncompressFirst(packed, from);
 
         IntWrapper pos = new IntWrapper(VariableByte.compressedLength(indexLength) + from);
-        int[] jumpSqr = Compressor.decompressS9(packed, pos, jumpSqrSize(indexLength));
-        int[] jump = Compressor.decompressS9(packed, pos, jumpSize(indexLength));
+        int[] jumpSqr = Compressor.decompressVb(packed, pos, jumpSqrSize(indexLength));
+        int[] jump = Compressor.decompressVb(packed, pos, jumpSize(indexLength));
         byte[] iPos = Arrays.copyOfRange(packed, pos.get(), packed.length);
 
         return new Positions(indexLength, jumpSqr, jump, iPos);
@@ -78,14 +78,10 @@ public class Positions {
     }
 
     public BytesRange positions(int docId) {
-        try {
-            int startJumpInd = getJumpIndByDocIdWithJumpSqr(docId);
-            int startPos = getPosByDocIdWithStartJump(docId, startJumpInd);
-            int docPos = getPosByDocId(docId, startPos);
-            return getRangeByPackedPos(docPos);
-        } catch (Exception e) {
-            return new BytesRange(new byte[0]);
-        }
+        int startJumpInd = getJumpIndByDocIdWithJumpSqr(docId);
+        int startPos = getPosByDocIdWithStartJump(docId, startJumpInd);
+        int docPos = getPosByDocId(docId, startPos);
+        return (docPos == -1) ? new BytesRange(new byte[0]) : getRangeByPackedPos(docPos);
     }
 
     private int getDocId(int pos) {
@@ -122,15 +118,15 @@ public class Positions {
 
     private int getPosByDocId(int docId, int startPos) {
         int pos = startPos;
-        while (getDocId(pos) < docId) {
+        int curDocId;
+        while ((curDocId = getDocId(pos)) < docId) {
             // docId length positions
-            int curDIcId = VariableByte.uncompressFirst(indexPositions, pos);
             int lengthPos = VariableByte.getNextPos(indexPositions, pos);
             int rangeLength = VariableByte.uncompressFirst(indexPositions, lengthPos);
             int rangePos = VariableByte.getNextPos(indexPositions, lengthPos);
             pos = rangePos + rangeLength;
         }
-        return pos;
+        return (curDocId == docId) ? pos : -1;
     }
 
     private static int jumpSize(int indexLength) {
