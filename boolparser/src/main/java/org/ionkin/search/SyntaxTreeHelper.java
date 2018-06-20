@@ -23,13 +23,23 @@ import static org.scijava.parse.Operators.*;
 public class SyntaxTreeHelper {
     private static Logger logger = LoggerFactory.getLogger(SyntaxTreeHelper.class);
 
-    private static final String closeBrace = "]\\)}»";
+    private static final String closeBrace = "]\\)}\"";
     private static final String wordSymbol = Util.ruEnLowerSymbol;
 
     static SyntaxTree create(String normalized) {
-        normalized = normalized.replaceAll("([" + closeBrace + wordSymbol + "]) ([^&|])", "$1 && $2");
+        normalized = replaceSpaceOnAnd(normalized);
         logger.debug("normalized '{}'", normalized);
         return new ExpressionParser().parseTree(normalized);
+    }
+
+    static String replaceSpaceOnAnd(String s) {
+        Pattern p = Pattern.compile("([" + closeBrace + wordSymbol + "]) ([^&|])");
+        Matcher m = p.matcher(s);
+        while (m.find()) {
+            s = m.replaceAll("$1 && $2");
+            m = p.matcher(s);
+        }
+        return s;
     }
 
     private final SearchMap positions;
@@ -101,7 +111,7 @@ public class SyntaxTreeHelper {
     /**
      * @param words    word at quotes. Order is very impotent
      * @param count    max count of indices to return
-     * @param distance max distance between first and last word at sequence
+     * @param distance max DISTANCE between first and last word at sequence
      * @see Logic#andQuotes
      */
     int[] andQuotes(List<LightString> words, int count, int distance) {
