@@ -8,6 +8,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Logic {
 
+    private static int TITLE_WEIGHT = 5;
+
     static int[] or(int[] ar1, int[] ar2, int count) {
         List<Integer> list = new ArrayList<>();
         int n = 0;
@@ -84,14 +86,14 @@ public class Logic {
     }
 
     /**
-     * find indices for quote with max distance.
+     * find indices for quote with max DISTANCE.
      * e.g.: for <<Слово о Игореве>> / 4
      * or <<Слово о полку Игореве>> / 4
      *
      * @param wordIndices      list of word indices. Used as first filter
      * @param wordPositionsMap list of word positions
      * @param count            max count of returned indices
-     * @param distance         max distance between first and last word at quotes
+     * @param distance         max DISTANCE between first and last word at quotes
      * @return index's where located this quote
      */
     static int[] andQuotes(Index[] wordIndices, Positions[] wordPositionsMap, int count, int distance) {
@@ -115,7 +117,7 @@ public class Logic {
                 eq &= index.containsDocWithGoToEffect(docId);
             }
 
-            if (eq) { // add if position's distance is small
+            if (eq) { // add if position's DISTANCE is small
                 int[][] wordPositions = new int[n][];
                 for (int i = 0; i < n; i++) {
                     BytesRange poss = wordPositionsMap[i].positions(docId);
@@ -141,7 +143,7 @@ public class Logic {
         return res.getCopy();
     }
 
-    static int[] simple(Map<LightString, Integer> idfs, Map<LightString, Index> index,
+    static int[] simple(Map<LightString, Integer> idfs, Map<LightString, Index> index, Map<LightString, Index> titleIndex,
                         Map<LightString, Positions> positions, int countInd, int countTop) {
         final AtomicInteger sumIdf = new AtomicInteger();
         idfs.forEach((k, v) -> sumIdf.addAndGet(v));
@@ -157,17 +159,18 @@ public class Logic {
         }
         Collection<int[]> indices = wordIndexMap.values();
         int[] inds = Util.merge(indices);
-        return rankingTfIdf(inds, idfs, index, positions, countTop);
+        return ranking(inds, idfs, index, titleIndex, positions, countTop);
     }
 
+    @Deprecated /* Use #ranking == tf.idf + titleScope */
     static int[] rankingTfIdf(int[] docIds0, Map<LightString, Integer> idfs, Map<LightString, Index> index,
-                              Map<LightString, Positions> positions, int count) {
+                               Map<LightString, Positions> positions, int count) {
         TreeMap<Integer, IntArray> indScope = new TreeMap<>(Integer::compare);
 
         int nInScope = 0;
 
         for (int docId : docIds0) {
-            int scope = scope(index, positions, idfs, docId);
+            int scope = scopeTfIdf(index, positions, idfs, docId);
             if (indScope.isEmpty() || scope >= indScope.firstKey()) {
                 IntArray list = indScope.getOrDefault(scope, new IntArray());
                 list.add(docId);
@@ -183,7 +186,43 @@ public class Logic {
                 }
             }
         }
+        index.forEach((k, v) -> v.goToStartPosition());
 
+        return getKeys(indScope, nInScope, count);
+    }
+
+    static int[] ranking(int[] docIds0, Map<LightString, Integer> idfs, Map<LightString, Index> index,
+                         Map<LightString, Index> titleIndex, Map<LightString, Positions> positions, int count) {
+        TreeMap<Integer, IntArray> indScope = new TreeMap<>(Integer::compare);
+
+        int nInScope = 0;
+
+        for (int docId : docIds0) {
+            int scope = scope(index, titleIndex, positions, idfs, docId);
+            if (indScope.isEmpty() || scope >= indScope.firstKey()) {
+                IntArray list = indScope.getOrDefault(scope, new IntArray());
+                list.add(docId);
+                nInScope++;
+
+                indScope.put(scope, list);
+            }
+            if (nInScope > count) {
+                int s = indScope.firstEntry().getValue().size();
+                if (nInScope - s >= count) {
+                    indScope.pollFirstEntry();
+                    nInScope -= s;
+                }
+            }
+        }
+        index.forEach((k, v) -> v.goToStartPosition());
+        titleIndex.forEach((k, v) -> {
+            if (v != null) v.goToStartPosition();
+        });
+
+        return getKeys(indScope, nInScope, count);
+    }
+
+    private static int[] getKeys(TreeMap<Integer, IntArray> indScope, int nInScope, int count) {
         IntArray res = new IntArray(nInScope);
         while (!indScope.isEmpty()) {
             res.add(indScope.pollLastEntry().getValue().getCopy());
@@ -191,7 +230,7 @@ public class Logic {
         return (res.size() > count) ? Arrays.copyOf(res.getAll(), count) : res.getCopy();
     }
 
-    private static int scope(Map<LightString, Index> wordIndexMap, Map<LightString, Positions> wordPositionsMap,
+    private static int scopeTfIdf(Map<LightString, Index> wordIndexMap, Map<LightString, Positions> wordPositionsMap,
                              Map<LightString, Integer> idfs, int docId) {
         AtomicInteger scope = new AtomicInteger(0);
         wordPositionsMap.forEach((k, pos) -> {
@@ -205,15 +244,34 @@ public class Logic {
         return scope.get();
     }
 
+    private static int scope(Map<LightString, Index> wordIndexMap, Map<LightString, Index> titleIndex,
+                             Map<LightString, Positions> wordPositionsMap, Map<LightString, Integer> idfs, int docId) {
+        AtomicInteger scope = new AtomicInteger(0);
+        wordPositionsMap.forEach((k, pos) -> {
+            if (wordIndexMap.get(k).containsDocWithGoToEffect(docId)) {
+                BytesRange poss = pos.positions(docId);
+                if (poss.length() != 0) {
+                    scope.addAndGet(Ranking.tfIdf(idfs.get(k), poss));
+                    if (titleIndex.get(k) != null) {
+                        if (titleIndex.get(k).containsDocWithGoToEffect(docId)) {
+                            scope.addAndGet(idfs.get(k) * TITLE_WEIGHT);
+                        }
+                    }
+                }
+            }
+        });
+        return scope.get();
+    }
+
     /**
-     * find indices for quote with max distance.
+     * find indices for quote with max DISTANCE.
      * e.g.: for <<Слово о Игореве>> / 4
      * or <<Слово о полку Игореве>> / 4
      *
      * @param wordIndices      list of word indices. Used as first filter
      * @param wordPositionsMap list of word positions
      * @param count            max count of returned indices
-     * @param distance         max distance between first and last word at quotes
+     * @param distance         max DISTANCE between first and last word at quotes
      * @return index's where located this quote
      */
     @Deprecated
@@ -246,7 +304,7 @@ public class Logic {
                     eq &= (docId == wordIndices[k][is[k]]);
                 }
                 if (eq) {
-                    // add if position's distance is small
+                    // add if position's DISTANCE is small
                     int[][] wordPositions = new int[n][];
                     for (int i = 0; i < n; i++) {
                         BytesRange poss = wordPositionsMap[i].positions(docId);
@@ -267,8 +325,8 @@ public class Logic {
 
     /**
      * @param wordPositions matrix of word positions. Each row is represent a word positions at document
-     * @param distance      max distance between first and last words
-     * @return is @distance more or equals then distance between first and last words at quotes
+     * @param distance      max DISTANCE between first and last words
+     * @return is @DISTANCE more or equals then DISTANCE between first and last words at quotes
      */
     static boolean isQuote(int[][] wordPositions, int distance) {
         if (distance < wordPositions.length) return false;
