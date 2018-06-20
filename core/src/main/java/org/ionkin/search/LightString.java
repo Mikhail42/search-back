@@ -2,6 +2,8 @@ package org.ionkin.search;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public class LightString implements Serializable {
 
@@ -15,6 +17,18 @@ public class LightString implements Serializable {
 
     public LightString(byte[] bytes) {
         this.bytes = (bytes.length <= 0x7F) ? bytes : Arrays.copyOfRange(bytes, 0, 0x7F);
+    }
+
+    public double jakar(LightString other) {
+        Set<Byte> s1 = new HashSet<>();
+        for (byte b : bytes) s1.add(b);
+        Set<Byte> s2 = new HashSet<>();
+        for (byte b : other.bytes) s2.add(b);
+        HashSet<Byte> s3 = new HashSet<>();
+        s3.addAll(s1); s3.addAll(s2);
+        int count = 0;
+        for (byte b1 : s1) for (byte b2 : s2) if (b1 == b2) count++;
+        return ((double) count) / s3.size();
     }
 
     @Override
@@ -66,6 +80,14 @@ public class LightString implements Serializable {
 
     public boolean startWith(char c) {
         return fromByte(bytes[0]) == c;
+    }
+
+    public boolean isPositiveInteger() {
+        boolean r = true;
+        for (byte b : bytes) {
+            r &= (b >= '0' && b <= '9');
+        }
+        return r;
     }
 
     private static char fromByte(byte b) {
