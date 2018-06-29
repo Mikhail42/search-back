@@ -252,11 +252,12 @@ public class Logic {
                 BytesRange poss = pos.positions(docId);
                 if (poss.length() != 0) {
                     scope.addAndGet(Ranking.tfIdf(idfs.get(k), poss));
-                    if (titleIndex.get(k) != null) {
+                    // TODO
+                    /*if (titleIndex.get(k) != null) {
                         if (titleIndex.get(k).containsDocWithGoToEffect(docId)) {
                             scope.addAndGet(idfs.get(k) * TITLE_WEIGHT);
                         }
-                    }
+                    }*/
                 }
             }
         });

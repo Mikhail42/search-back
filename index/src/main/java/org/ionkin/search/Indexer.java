@@ -99,7 +99,7 @@ public class Indexer {
                 ar.add(idsLoc);
                 int[] res = ar.getAll();
                 Arrays.sort(res);
-                byte[] joined = Compressor.compressVbWithMemory(res);
+                byte[] joined = Compressor.compressVbWithoutMemory(res);
                 global.put(w, new BytesRange(joined));
             } else {
                 global.put(w, new BytesRange(locInd));

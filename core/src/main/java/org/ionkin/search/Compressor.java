@@ -16,28 +16,6 @@ public class Compressor {
         }
     }
 
-    public static int[] compressS9WithoutMemory(int[] data) {
-        diff(data);
-        return Simple9.compress(data);
-    }
-
-    public static int[] decompressS9WithMaxCount(BytesRange range, int max) {
-        int[] out = Simple9.uncompressWithMaxCount(range, max);
-        sum(out);
-        return out;
-    }
-
-    public static int[] decompressS9(BytesRange range) {
-        return decompressS9WithMaxCount(range, Integer.MAX_VALUE);
-    }
-
-    public static int[] decompressS9(byte[] data, IntWrapper inPos, int size) {
-        int[] out = new int[size];
-        Simple9.uncompress(data, inPos, out, new IntWrapper(), size);
-        sum(out);
-        return out;
-    }
-
     public static byte[] compressVbWithMemory(int[] data) {
         int[] copy = Arrays.copyOf(data, data.length);
         diff(copy);
@@ -50,20 +28,28 @@ public class Compressor {
     }
 
     public static int[] decompressVb(byte[] bytes) {
-        return decompressVb(bytes, 0, bytes.length, Integer.MAX_VALUE);
+        return decompressVb(bytes, new IntWrapper(), bytes.length, Integer.MAX_VALUE);
     }
 
-    public static int[] decompressVb(byte[] bytes, int from, int until, int take) {
+    public static int[] decompressVb(byte[] bytes, IntWrapper from) {
+        return decompressVb(bytes, from, bytes.length, Integer.MAX_VALUE);
+    }
+
+    public static int[] decompressVb(byte[] bytes, IntWrapper from, int take) {
+        return decompressVb(bytes, from, bytes.length, take);
+    }
+
+    public static int[] decompressVb(byte[] bytes, IntWrapper from, int until, int take) {
         int[] uncomp = VariableByte.uncompress(bytes, from, until, take);
         sum(uncomp);
         return uncomp;
     }
 
     public static int[] decompressVb(BytesRange range) {
-        return decompressVb(range.getAll(), range.getFrom(), range.getTo(), range.length());
+        return decompressVb(range.getAll(), new IntWrapper(range.getFrom()), range.getTo(), range.length());
     }
 
     public static int[] decompressVb(BytesRange range, int count) {
-        return decompressVb(range.getAll(), range.getFrom(), range.getTo(), Math.min(range.length(), count));
+        return decompressVb(range.getAll(), new IntWrapper(range.getFrom()), range.getTo(), Math.min(range.length(), count));
     }
 }

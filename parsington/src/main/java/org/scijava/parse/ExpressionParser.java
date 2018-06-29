@@ -38,6 +38,8 @@ import java.util.Comparator;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A parser for mathematical expressions, using Dijkstra's famous <a
@@ -95,7 +97,18 @@ public class ExpressionParser {
 	 * @throws IllegalArgumentException if the syntax of the expression is
 	 *           incorrect.
 	 */
-	public SyntaxTree parseTree(final String expression) {
+	public SyntaxTree parseTree(String expression) {
+		Pattern p = Pattern.compile("\"");
+		Matcher m = p.matcher(expression);
+		while (m.find()) {
+			expression = m.replaceFirst("«");
+			m = p.matcher(expression);
+			if (m.find()) {
+				expression = m.replaceFirst("»");
+			}
+			m = p.matcher(expression);
+		}
+
 		return new ParseOperation(expression).parseTree();
 	}
 

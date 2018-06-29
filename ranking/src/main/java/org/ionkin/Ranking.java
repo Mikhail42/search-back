@@ -23,7 +23,7 @@ public class Ranking {
         if (index == null || index.length() == 0) return 0;
         int freq = VariableByte.decompressSize(index);
         int r = logFreq(RUSSIAN_WIKI / freq);
-        return r * r;
+        return r * r * r;
     }
 
     private static int tf(int[] positions) {

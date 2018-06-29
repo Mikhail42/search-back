@@ -18,16 +18,16 @@ public class CompressorTest {
         int[] decompVb = Compressor.decompressVb(compVb);
         assertTrue(Arrays.equals(ar, decompVb));
 
-        int[] compS9 = Compressor.compressS9WithoutMemory(ar);
+        /*int[] compS9 = Compressor.compressVbWithoutMemory(ar);
         ByteBuffer buf = ByteBuffer.allocate(compS9.length * 4);
         for (int c : compS9) {
             buf.putInt(c);
         }
         Compressor.sum(ar);
         int[] decompS9 = Compressor.decompressS9(buf.array(), new IntWrapper(), ar.length);
-        assertTrue(Arrays.equals(ar, decompS9));
+        assertTrue(Arrays.equals(ar, decompS9));*/
     }
-
+/*
     @Test
     public void compRange() {
         int[] poss = Compressor.decompressS9(new BytesRange(new byte[]{-128, 0, 104, 104}));
@@ -38,7 +38,7 @@ public class CompressorTest {
     public void compRangeWithFrom() {
         int[] poss = Compressor.decompressS9(new BytesRange(new byte[]{12, 23, -128, 0, 104, 104}, 2));
         assertArrayEquals(poss, new int[] {26728});
-    }
+    }*/
 
     @Test
     public void compressDecompressVb2() {

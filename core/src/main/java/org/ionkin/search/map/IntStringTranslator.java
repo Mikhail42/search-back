@@ -11,15 +11,15 @@ public class IntStringTranslator extends IntTranslator<LightString> implements S
 
     @Override
     public byte[] serialize(Integer key, LightString value) {
-        ByteArray ar = new ByteArray(value.length() + 1 + VariableByte.compressedLength(key));
+        ByteArray ar = new ByteArray(value.length() + VariableByte.compressedLength(key));
         ar.addVb(key);
-        ar.add(value);
+        ar.add(value.getBytes());
         return ar.getAll();
     }
 
     @Override
     public LightString deserializeValue(byte[] packed) {
         int pos = VariableByte.getNextPos(packed, 0);
-        return new LightString(Arrays.copyOfRange(packed, packed[pos] + 1, packed.length));
+        return new LightString(Arrays.copyOfRange(packed, pos, packed.length));
     }
 }

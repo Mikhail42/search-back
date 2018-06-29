@@ -48,13 +48,16 @@ public class EvaluatorPerformance {
         return new EvaluatorPerformance(searchMap, indexMap, titleIndexMap, allIds, lemms);
     }
 
+   // @Deprecated
     public static EvaluatorPerformance loadTest() throws IOException {
         byte[] docsAsBytes = IO.read(Util.basePath + "docids.chsi");
         int[] allIds = Compressor.decompressVb(docsAsBytes);
 
-        IndexMap indexMap = new IndexMap(Util.basePath + "indexlemm.im");
+        IndexMap indexMap = new IndexMap(Util.basePath + "indexlemm.im");//new StringBytesMap(Util.basePath + "indexlemm.sbm"));
+        //indexMap.write(Util.basePath + "indexlemm.im");
         IndexMap titleIndex = new IndexMap(new StringBytesMap(Util.basePath + "titleindex.sbm"));
-        SearchMap searchMap = new SearchMap(Util.basePath +  "positionslemm.sm");
+        SearchMap searchMap = new SearchMap(Util.basePath + "positionslemm.sm");//new StringPositionsMap(Util.basePath +  "positionslemm.spm"));
+        //searchMap.write(Util.basePath + "positionslemm.sm");
         StringStringMap lemms = new StringStringMap(Util.wordLemmPath);
 
         return new EvaluatorPerformance(searchMap, indexMap, titleIndex, allIds, lemms);

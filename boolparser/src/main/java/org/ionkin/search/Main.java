@@ -90,7 +90,7 @@ public class Main {
                 new P("где короновали николая 2", 0),
                 new P("товарищ прокурора", 0),
                 new P("цари газы", 0),
-                new P("администраиивный кодекс", 0)
+                new P("административный кодекс", 0)
         };
         String[] qs = Arrays.stream(ps).map(x -> x.getQuery()).collect(Collectors.toList()).toArray(new String[0]);
         csv(qs, EvaluatorPerformance.loadTest(), 10);
@@ -146,11 +146,11 @@ public class Main {
                 List<Pair<Integer, QueryPage>> res = evaluator.evaluate(q, count);
                 int[] docIds = res.stream().mapToInt(Pair::getKey).toArray();
                 if (docIds.length > 0) {
-                    sb.append("\"" + q + "\",1,\"https://ru.wikipedia.org/?curid=" + docIds[0]
+                    sb.append("\"" + q + "\",1,\"https://ru.wikipedia.org/" + res.get(0).getValue().getTitle()
                             + "\",0,\"" + res.get(0).getValue().getSnippet() + "\"\n");
                 }
                 for (int i = 1; i < docIds.length; i++) {
-                    sb.append("\"\"," + (i + 1) + ",\"https://ru.wikipedia.org/?curid=" + docIds[i]
+                    sb.append("\"\"," + (i + 1) + ",\"https://ru.wikipedia.org/" + res.get(i).getValue().getTitle()
                             + "\",0,\"" + res.get(i).getValue().getSnippet() + "\"\n");
                 }
             } catch (Exception e) {

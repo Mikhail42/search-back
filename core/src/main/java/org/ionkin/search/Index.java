@@ -70,18 +70,18 @@ public class Index {
 
     public byte[] serialize() {
         byte[] size = VariableByte.compress(indexLength);
-        byte[] jumpPow4Comp = (jumpPow4.length != 0) ? Compressor.compressVbWithMemory(jumpPow4) : new byte[0];
-        byte[] jumpSqrComp = (jumpSqr.length != 0) ? Compressor.compressVbWithMemory(jumpSqr) : new byte[0];
-        byte[] jumpRefComp = (jumpRef.length != 0) ? Compressor.compressVbWithMemory(jumpRef) : new byte[0];
-        byte[] jumpDocIdComp = (jumpSum.length != 0) ? Compressor.compressVbWithMemory(jumpSum) : new byte[0];
+        byte[] jumpPow4Comp = (jumpPow4.length != 0) ? Compressor.compressVbWithoutMemory(jumpPow4) : new byte[0];
+        byte[] jumpSqrComp = (jumpSqr.length != 0) ? Compressor.compressVbWithoutMemory(jumpSqr) : new byte[0];
+        byte[] jumpRefComp = (jumpRef.length != 0) ? Compressor.compressVbWithoutMemory(jumpRef) : new byte[0];
+        byte[] jumpDocIdComp = (jumpSum.length != 0) ? Compressor.compressVbWithoutMemory(jumpSum) : new byte[0];
         int jumpCompByteSize = (jumpDocIdComp.length + jumpRefComp.length + jumpSqrComp.length + jumpPow4Comp.length);
 
         ByteBuffer buf = ByteBuffer.allocate(size.length + jumpCompByteSize + index.length());
         buf.put(size);
-        for (int jP4 : jumpPow4Comp) buf.putInt(jP4);
-        for (int jS : jumpSqrComp) buf.putInt(jS);
-        for (int j : jumpRefComp) buf.putInt(j);
-        for (int j : jumpDocIdComp) buf.putInt(j);
+        buf.put(jumpPow4Comp);
+        buf.put(jumpSqrComp);
+        buf.put(jumpRefComp);
+        buf.put(jumpDocIdComp);
         buf.put(index.getCopy());
 
         return buf.array();
@@ -174,15 +174,15 @@ public class Index {
     }
 
     private static int jumpSize(int indexLength) {
-        return indexLength / JUMP;
+        return (indexLength - 1) / JUMP;
     }
 
     private static int jumpSqrSize(int indexLength) {
-        return indexLength / JUMP_SQR;
+        return (indexLength - 1) / JUMP_SQR;
     }
 
     private static int jumpPow4Size(int indexLength) {
-        return indexLength / JUMP_POW4;
+        return (indexLength - 1) / JUMP_POW4;
     }
 
     public int getIndexLength() {

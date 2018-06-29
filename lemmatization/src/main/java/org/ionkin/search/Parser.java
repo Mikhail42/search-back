@@ -29,7 +29,7 @@ public class Parser {
             Pattern.compile("\\d+\\s(.*)\\s(.*)\\s+(NOUN|VERB|ADJ|PUNCT|PRON|ADV|NUM|X)\\s.*");
 
     public static void main(String... args) throws Exception {
-        StringStringMap common = new StringStringMap(Util.basePath + "allWordMap.chmss");
+        lemmFixer();/*StringStringMap common = new StringStringMap(Util.basePath + "allWordMap.chmss");
         StringStringMap fix = new StringStringMap();
         common.forEach((k, v) -> {
             if (k.startWith('-')) {
@@ -38,10 +38,10 @@ public class Parser {
                 fix.put(k, v);
             }
         });
-        fix.write(Util.basePath + "fixWordMap.chmss");
+        fix.write(Util.basePath + "fixWordMap.chmss");*/
     }
 
-    public static void joinEnRu() throws Exception {
+    public static void joinEnRu() throws IOException {
         StringStringMap enWordMap = new StringStringMap(Util.basePath + "enWordMap.chmss");
         StringStringMap ruWordMap = new StringStringMap(Util.basePath + "ruWordMap.chmss");
         StringStringMap common = ruWordMap;
@@ -49,7 +49,22 @@ public class Parser {
         common.write(Util.basePath + "allWordMap.chmss");
     }
 
-    public static void writeEnglish(String filename) throws Exception {
+    private static void lemmFixer() throws IOException {
+        StringStringMap common = new StringStringMap(Util.basePath + "lemm/allWordMap — копия.chmss");
+        StringStringMap res = new StringStringMap();
+        common.forEach((k, v) -> {
+            if (k.jakar(v) > 0.3) {
+                if (k.startWith('-')) {
+                    res.put(k.substring(1), v.substring(1));
+                } else {
+                    res.put(k, v);
+                }
+            }
+        });
+        res.write(Util.basePath + "lemm/allWordMap.chmss");
+    }
+
+    public static void writeEnglish(String filename) throws IOException {
         String enFilename = Util.basePath + "englishLemms0531";
         int nThreads = 4;
         String body = read(enFilename);

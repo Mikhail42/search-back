@@ -55,7 +55,7 @@ public final class Operators {
 	public static final Group PARENS = group("(", ")", 16);
 	public static final Group BRACKETS = group("[", "]", 16);
 	public static final Group BRACES = group("{", "}", 16);
-	public static final Group QUOTES = group("\"", "\"", 16);
+	public static final Group QUOTES = group("«", "»", 16);
 	// -- unary --
 	public static final Operator NOT = op("!", 1, RIGHT, 13);
 	// -- multiplicative --

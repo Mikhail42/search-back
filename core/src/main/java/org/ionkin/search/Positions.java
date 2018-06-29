@@ -52,8 +52,8 @@ public class Positions {
 
         ByteBuffer buf = ByteBuffer.allocate(size.length + (jumpComp.length + jumpSqrComp.length) + indexPositions.length);
         buf.put(size);
-        for (int jS : jumpSqrComp) buf.putInt(jS);
-        for (int j : jumpComp) buf.putInt(j);
+        buf.put(jumpSqrComp);
+        buf.put(jumpComp);
         buf.put(indexPositions);
 
         return buf.array();
