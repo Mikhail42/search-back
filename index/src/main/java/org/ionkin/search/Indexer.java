@@ -2,7 +2,6 @@ package org.ionkin.search;
 
 import com.google.common.primitives.Ints;
 import org.ionkin.search.map.StringBytesMap;
-import org.ionkin.search.map.StringStringMap;
 import org.ionkin.search.set.CompactHashSet;
 import org.ionkin.search.set.StringTranslator;
 import org.slf4j.Logger;
@@ -17,9 +16,9 @@ public class Indexer {
 
     public static void main(String... args) throws Exception {
         logger.debug("started");
-        /*writeIndex(Util.textPath, Util.indexFolder);
-        joinIndex();*/
-        buildTitleIndex(Util.textPath);
+        writeIndex(Util.textPath, Util.indexFolder);
+        joinIndex();
+        //buildTitleIndex(Util.textPath);
     }
 
     public static void joinIndex() throws IOException {
@@ -75,17 +74,16 @@ public class Indexer {
 
     private static void buildTitleIndex(String inDir) throws IOException {
         String[] files = new File(inDir).list();
-        StringStringMap lemm = new StringStringMap(Util.wordLemmPath);
         StringBytesMap global = new StringBytesMap();
         ParallelFor.par(i -> {
             logger.info("filename: {}", files[i]);
-            Map<Integer, Set<LightString>> idTitleMap = extractTitles(inDir + files[i], lemm);
+            Map<Integer, Set<LightString>> idTitleMap = extractTitles(inDir + files[i]);
             Map<LightString, byte[]> from = from(idTitleMap);
             synchronized (global) {
                 join(global, from);
             }
         }, 0, files.length);
-        global.write(Util.basePath + "titleindex.sbm");
+        global.write(Util.basePath + "titleindexNoLemm.sbm");
     }
 
     private static void join(StringBytesMap global, Map<LightString, byte[]> local) {
@@ -128,7 +126,7 @@ public class Indexer {
         return resMap;
     }
 
-    private static Map<Integer, Set<LightString>> extractTitles(String absFileName, StringStringMap lemm) throws IOException {
+    private static Map<Integer, Set<LightString>> extractTitles(String absFileName) throws IOException {
         WikiParser wikiParser = new WikiParser(absFileName);
         Map<Integer, Set<LightString>> res = new HashMap<>();
         wikiParser.getPages().forEach(page -> {
@@ -137,7 +135,7 @@ public class Indexer {
             for (String s : ar) {
                 String s2 = Util.normalize(s);
                 LightString word = new LightString(s2);
-                set.add(lemm.getOrDefault(word, word));
+                set.add(word);
             }
             res.put(page.getId(), set);
         });

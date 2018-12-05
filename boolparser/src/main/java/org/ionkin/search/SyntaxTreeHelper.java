@@ -44,13 +44,11 @@ public class SyntaxTreeHelper {
 
     private final SearchMap positions;
     private final IndexMap indexMap;
-    private final StringStringMap lemms;
     private final int[] allIds;
 
-    public SyntaxTreeHelper(SearchMap positions, IndexMap indexMap, StringStringMap lemms, int[] allIds) {
+    public SyntaxTreeHelper(SearchMap positions, IndexMap indexMap, int[] allIds) {
         this.positions = positions;
         this.indexMap = indexMap;
-        this.lemms = lemms;
         this.allIds = allIds;
     }
 
@@ -90,7 +88,7 @@ public class SyntaxTreeHelper {
             }
         } else {
             LightString ls = new LightString(token);
-            return get(lemms.getOrDefault(ls, ls), count);
+            return get(ls, count);
         }
     }
 
@@ -157,7 +155,6 @@ public class SyntaxTreeHelper {
                 .map(Object::toString)
                 .map(Normalizer::normalize)
                 .map(LightString::new)
-                .map(w -> lemms.getOrDefault(w, w))
                 .collect(Collectors.toList());
         for (LightString w : words) {
             if (indexMap.get(w) == null) {

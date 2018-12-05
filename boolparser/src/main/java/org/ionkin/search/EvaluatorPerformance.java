@@ -20,15 +20,10 @@ public class EvaluatorPerformance {
     private final IndexMap indexMap;
     private final IndexMap titleIndex;
     private final SearchMap positions;
-    private final StringStringMap lemms;
     private final SyntaxTreeHelper syntaxTreeHelper;
 
     public SearchMap getPositions() {
         return positions;
-    }
-
-    public StringStringMap getLemms() {
-        return lemms;
     }
 
     public static void main(String... args) throws Exception {
@@ -43,32 +38,28 @@ public class EvaluatorPerformance {
         IndexMap indexMap = new IndexMap(new StringBytesMap(Util.basePath + "test.index"));
         IndexMap titleIndexMap = new IndexMap(new StringBytesMap(Util.basePath + "testTitle.index"));
         SearchMap searchMap = new SearchMap(new StringPositionsMap(Util.basePath + "test.posit"));
-        StringStringMap lemms = new StringStringMap(Util.wordLemmPath);
 
-        return new EvaluatorPerformance(searchMap, indexMap, titleIndexMap, allIds, lemms);
+        return new EvaluatorPerformance(searchMap, indexMap, titleIndexMap, allIds);
     }
 
-   // @Deprecated
+    // @Deprecated
     public static EvaluatorPerformance loadTest() throws IOException {
         byte[] docsAsBytes = IO.read(Util.basePath + "docids.chsi");
         int[] allIds = Compressor.decompressVb(docsAsBytes);
 
-        IndexMap indexMap = new IndexMap(Util.basePath + "indexlemm.im");//new StringBytesMap(Util.basePath + "indexlemm.sbm"));
-        //indexMap.write(Util.basePath + "indexlemm.im");
-        IndexMap titleIndex = new IndexMap(new StringBytesMap(Util.basePath + "titleindex.sbm"));
-        SearchMap searchMap = new SearchMap(Util.basePath + "positionslemm.sm");//new StringPositionsMap(Util.basePath +  "positionslemm.spm"));
-        //searchMap.write(Util.basePath + "positionslemm.sm");
-        StringStringMap lemms = new StringStringMap(Util.wordLemmPath);
+        IndexMap titleIndex = new IndexMap(new StringBytesMap(Util.basePath + "titleindexNoLemm.sbm"));
+        IndexMap indexMap = new IndexMap(new StringBytesMap(Util.basePath + "index.chmsb"));
+        SearchMap searchMap = new SearchMap(Util.basePath + "positions.sm");
+        //searchMap.write(Util.basePath + "positions.sm");
 
-        return new EvaluatorPerformance(searchMap, indexMap, titleIndex, allIds, lemms);
+        return new EvaluatorPerformance(searchMap, indexMap, titleIndex, allIds);
     }
 
-    private EvaluatorPerformance(SearchMap positions, IndexMap indexMap, IndexMap titleIndex, int[] allIds, StringStringMap lemms) {
+    private EvaluatorPerformance(SearchMap positions, IndexMap indexMap, IndexMap titleIndex, int[] allIds) {
         this.indexMap = indexMap;
         this.titleIndex = titleIndex;
         this.positions = positions;
-        this.lemms = lemms;
-        syntaxTreeHelper = new SyntaxTreeHelper(positions, indexMap, lemms, allIds);
+        syntaxTreeHelper = new SyntaxTreeHelper(positions, indexMap, allIds);
         logger.debug("Evaluator created");
     }
 
@@ -101,19 +92,17 @@ public class EvaluatorPerformance {
         if (isBool) {
             SyntaxTree tree = SyntaxTreeHelper.create(normalized);
             logger.debug("expression three '{}'", tree);
-            return SyntaxTreeHelper.queryWords(tree).stream()
-                    .map(w -> lemms.getOrDefault(w, w)).collect(Collectors.toList());
+            return SyntaxTreeHelper.queryWords(tree);
         } else {
             return Stream.of(normalized.split(" "))
                     .map(LightString::new)
-                    .map(x -> this.lemms.getOrDefault(x, x))
                     .collect(Collectors.toSet());
         }
     }
 
     private Map<Integer, QueryPage> snippets(int[] ids, Map<LightString, Integer> idfs,
                                              Map<LightString, Positions> positions) throws IOException {
-        return Snippet.snippets(ids, idfs, positions, this.lemms);
+        return Snippet.snippets(ids, idfs, positions);
     }
 
     private int[] evaluate(String normalized, Map<LightString, Integer> idfs, Map<LightString, Index> index,

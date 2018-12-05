@@ -17,8 +17,7 @@ public class Snippet {
     static final int DISTANCE = 20;
 
     public static Map<Integer, QueryPage> snippets(int[] ids, Map<LightString, Integer> idfs,
-                                                   Map<LightString, Positions> wordPositionsMap,
-                                                   StringStringMap lemms) throws IOException {
+                                                   Map<LightString, Positions> wordPositionsMap) throws IOException {
         Map<Integer, QueryPage> res = new HashMap<>();
         Set<LightString> wordsAsSet = new HashSet<>(idfs.keySet());
 
@@ -28,7 +27,7 @@ public class Snippet {
             Page page = TextArticleIterator.readPage(docId);
             String snip = Snippet.snippet(wordPos, idfs, page);
             snip = pretty(snip);
-            snip = selectQueryWords(snip, wordsAsSet, lemms);
+            snip = selectQueryWords(snip, wordsAsSet);
 
             res.put(docId, new QueryPage(docId, page.getTitle(), snip));
         }
@@ -81,12 +80,11 @@ public class Snippet {
         return bestPos;
     }
 
-    static String selectQueryWords(String snip, Set<LightString> wordsAsSet, StringStringMap lemms) {
+    static String selectQueryWords(String snip, Set<LightString> wordsAsSet) {
         String[] snipWords = Util.splitPattern.split(snip);
         for (String snipWord : snipWords) {
             LightString norm1 = new LightString(Util.normalize(snipWord));
-            LightString norm2 = lemms.getOrDefault(norm1, norm1);
-            if (wordsAsSet.contains(norm2)) {
+            if (wordsAsSet.contains(norm1)) {
                 Pattern pat = Pattern.compile("([^" + Util.wordSymbol + "])" + snipWord + "([^" + Util.wordSymbol + "])");
                 Matcher m = pat.matcher(snip);
                 if (m.find()) {

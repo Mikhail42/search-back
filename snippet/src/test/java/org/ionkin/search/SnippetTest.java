@@ -29,7 +29,7 @@ public class SnippetTest {
         assertEquals(7, Snippet.indexOf(Pattern.compile("[a-z]").matcher("Ая rz  sss"), 5));
     }
 
-    @Test
+   /* @Test
     public void selectQueryWords() {
         String snip = Snippet.selectQueryWords("3, 4, 5, 6, 7, 8 9 10, 11, 12", new HashSet<LightString>() {{
             add(new LightString("4"));
@@ -39,7 +39,7 @@ public class SnippetTest {
             put(new LightString("10"), new LightString("4"));
         }});
         assertEquals("3, <b>4</b>, 5, 6, 7, <b>8 9 10</b>, 11, 12", snip);
-    }
+    }*/
 
     @Test
     public void pretty() {

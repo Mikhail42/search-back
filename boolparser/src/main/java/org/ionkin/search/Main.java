@@ -92,7 +92,8 @@ public class Main {
                 new P("цари газы", 0),
                 new P("административный кодекс", 0)
         };
-        String[] qs = Arrays.stream(ps).map(x -> x.getQuery()).collect(Collectors.toList()).toArray(new String[0]);
+
+        String[] qs = Arrays.stream(ps).map(P::getQuery).collect(Collectors.toList()).toArray(new String[0]);
         csv(qs, EvaluatorPerformance.loadTest(), 10);
     }
 
