@@ -1,7 +1,7 @@
 package org.ionkin.search;
 
 import com.google.common.base.Utf8;
-import javafx.util.Pair;
+import org.ionkin.search.model.IntIntPair;
 import org.ionkin.search.map.CompactHashMap;
 import org.ionkin.search.map.IntIntIntTranslator;
 
@@ -18,7 +18,7 @@ public class WikiParser {
 
     private final String fileContent;
     private final ArrayList<Page> pages = new ArrayList<>();
-    private final CompactHashMap<Integer, Pair<Integer, Integer>> docidPositionMap =
+    private final CompactHashMap<Integer, IntIntPair> docidPositionMap =
             new CompactHashMap<>(new IntIntIntTranslator());
 
     public WikiParser(String filename) throws IOException {
@@ -55,7 +55,7 @@ public class WikiParser {
             int length = head + Utf8.encodedLength(text) + tail;
             currentByteLength += length;
 
-            docidPositionMap.put(id, new Pair<>(start, length));
+            docidPositionMap.put(id, new IntIntPair(start, length));
         }
     }
 
@@ -63,7 +63,7 @@ public class WikiParser {
         return pages;
     }
 
-    public CompactHashMap<Integer, Pair<Integer, Integer>> getDocidPositionMap() {
+    public CompactHashMap<Integer, IntIntPair> getDocidPositionMap() {
         return docidPositionMap;
     }
 }

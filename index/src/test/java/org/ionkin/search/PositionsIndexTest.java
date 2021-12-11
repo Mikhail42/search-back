@@ -1,6 +1,5 @@
 package org.ionkin.search;
 
-import javafx.geometry.Pos;
 import org.ionkin.search.map.IntBytesMap;
 import org.ionkin.search.map.StringPositionsMap;
 import org.junit.Test;

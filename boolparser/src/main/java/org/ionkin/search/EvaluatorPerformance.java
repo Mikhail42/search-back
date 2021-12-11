@@ -1,8 +1,8 @@
 package org.ionkin.search;
 
-import javafx.util.Pair;
 import org.ionkin.Ranking;
 import org.ionkin.search.map.*;
+import org.ionkin.search.model.Pair;
 import org.scijava.parse.SyntaxTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

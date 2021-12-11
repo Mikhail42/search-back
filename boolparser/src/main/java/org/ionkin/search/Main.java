@@ -1,8 +1,8 @@
 package org.ionkin.search;
 
 import com.google.common.base.Utf8;
-import javafx.util.Pair;
 import org.ionkin.search.map.*;
+import org.ionkin.search.model.Pair;
 import org.ionkin.search.set.CompactHashSet;
 import org.ionkin.search.set.StringTranslator;
 import org.slf4j.Logger;
@@ -145,14 +145,14 @@ public class Main {
         for (String q : qs) {
             try {
                 List<Pair<Integer, QueryPage>> res = evaluator.evaluate(q, count);
-                int[] docIds = res.stream().mapToInt(Pair::getKey).toArray();
+                int[] docIds = res.stream().mapToInt(kv -> kv.key).toArray();
                 if (docIds.length > 0) {
-                    sb.append("\"" + q + "\",1,\"https://ru.wikipedia.org/" + res.get(0).getValue().getTitle()
-                            + "\",0,\"" + res.get(0).getValue().getSnippet() + "\"\n");
+                    sb.append("\"" + q + "\",1,\"https://ru.wikipedia.org/" + res.get(0).value.getTitle()
+                            + "\",0,\"" + res.get(0).value.getSnippet() + "\"\n");
                 }
                 for (int i = 1; i < docIds.length; i++) {
-                    sb.append("\"\"," + (i + 1) + ",\"https://ru.wikipedia.org/" + res.get(i).getValue().getTitle()
-                            + "\",0,\"" + res.get(i).getValue().getSnippet() + "\"\n");
+                    sb.append("\"\"," + (i + 1) + ",\"https://ru.wikipedia.org/" + res.get(i).value.getTitle()
+                            + "\",0,\"" + res.get(i).value.getSnippet() + "\"\n");
                 }
             } catch (Exception e) {
                 logger.error("er: ", e);

@@ -1,6 +1,5 @@
 package org.ionkin.search;
 
-import javafx.util.Pair;
 import org.ionkin.search.map.*;
 
 import java.io.File;

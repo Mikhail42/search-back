@@ -11,7 +11,7 @@ import org.jfree.ui.ApplicationFrame;
 import static java.lang.Math.log;
 
 public class MyChart extends ApplicationFrame {
-    public MyChart(int[] ys, int step) throws Exception {
+    public MyChart(int[] ys, int step) {
         super("Frequence");
 
         final XYSeries xySeries = new XYSeries("First");

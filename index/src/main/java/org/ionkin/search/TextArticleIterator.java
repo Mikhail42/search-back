@@ -1,7 +1,7 @@
 package org.ionkin.search;
 
 import com.google.common.primitives.Ints;
-import javafx.util.Pair;
+import org.ionkin.search.model.IntIntPair;
 import org.apache.commons.io.FileUtils;
 import org.ionkin.search.map.CompactHashMap;
 import org.ionkin.search.map.IntIntIntTranslator;
@@ -18,7 +18,7 @@ public class TextArticleIterator {
 
     private static Map<Integer, String> firstdocidFilenameMap;
     private static int[] firstDocIds;
-    private static CompactHashMap<Integer, Pair<Integer, Integer>> docidPositionMap;
+    private static CompactHashMap<Integer, IntIntPair> docidPositionMap;
 
     static {
         try {
@@ -37,8 +37,8 @@ public class TextArticleIterator {
         int firstDocId = firstDocIds[index];
         logger.debug("first doc for article with id={} is '{}'", docId, firstDocId);
         String filename = Util.textPath + firstdocidFilenameMap.get(firstDocId);
-        Pair<Integer, Integer> startLength = docidPositionMap.get(docId);
-        return WikiParser.parsePage(filename, startLength.getKey(), startLength.getValue());
+        IntIntPair startLength = docidPositionMap.get(docId);
+        return WikiParser.parsePage(filename, startLength.first(), startLength.second());
     }
 
     public static int getFirstDocIdIndexByDocId(int docId) {
@@ -94,13 +94,13 @@ public class TextArticleIterator {
     }
 
     static void writePositions() throws IOException {
-        CompactHashMap<Integer, Pair<Integer, Integer>> docidPositionMap =
+        CompactHashMap<Integer, IntIntPair> docidPositionMap =
                 new CompactHashMap<>(new IntIntIntTranslator());
         ParallelFor.par((i) -> {
             int firstDocId = firstDocIds[i];
             String filename = firstdocidFilenameMap.get(firstDocId);
             WikiParser wikiParser = new WikiParser(Util.textPath + filename);
-            CompactHashMap<Integer, Pair<Integer, Integer>> local = wikiParser.getDocidPositionMap();
+            CompactHashMap<Integer, IntIntPair> local = wikiParser.getDocidPositionMap();
             synchronized (docidPositionMap) {
                 docidPositionMap.putAll(local);
             }

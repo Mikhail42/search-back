@@ -29,7 +29,6 @@ import org.ionkin.search.IO;
 import org.ionkin.search.VariableByte;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -122,7 +121,7 @@ public class CompactHashMap<K, V> extends AbstractMap<K, V> implements Serializa
             }
             logger.info("map is written to {}", filename);
         } else {
-            throw new NotImplementedException();
+            throw new IllegalArgumentException();
         }
     }
 
@@ -147,7 +146,7 @@ public class CompactHashMap<K, V> extends AbstractMap<K, V> implements Serializa
                 pos += VariableByte.compressedLengthOfLength(table[i]) + table[i].length;
             }
             return content;
-        } else throw new NotImplementedException();
+        } else throw new IllegalArgumentException();
     }
 
     public void read(String filename) throws IOException {
@@ -175,7 +174,7 @@ public class CompactHashMap<K, V> extends AbstractMap<K, V> implements Serializa
                 }
                 logger.info("read success");
             } else {
-                throw new NotImplementedException();
+                throw new IllegalArgumentException();
             }
         }
     }
