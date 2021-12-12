@@ -1,16 +1,7 @@
 #idea
 *.iml
-.idea/*
-
-logs/*
+.idea
+logs
 *.log
-
-target/*
-*.class
-boolparser/target/*
-core/target/*
-graph/target/*
-index/target/*
-view/target/*
-
+target
 
