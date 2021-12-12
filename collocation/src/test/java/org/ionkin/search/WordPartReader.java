@@ -19,7 +19,7 @@ public class WordPartReader {
     public static void main(String... args) throws IOException {
         StringStringMap ssm = new StringStringMap();
 
-        String filename = "C:\\Users\\Misha\\workspace\\wiki-bz2\\lemm\\lemms0530";
+        String filename = Util.basePath + "lemm/lemms0530";
         try (final FileChannel readChannel = new RandomAccessFile(filename, "r").getChannel()) {
             final long fileLength0 = readChannel.size();
             logger.info("read from {}. fileLength0={}", filename, fileLength0);

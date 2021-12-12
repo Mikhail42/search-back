@@ -3,11 +3,12 @@ This search libraries allow to create a search server for Russian Wikipedia.
 For use GUI to search, see [this project](https://github.com/Mikhail42/search-front).
 
 ## How to use
-1. Download [Russian Wiki Dump, 4.3 GB bz2](https://dumps.wikimedia.org/ruwiki/)
-2. Create lemmas via lemmatization module.
-3. Create inverse index via index module.
-4. Run search-front.
-5. Use GUI to search.
+1. Download [Russian Wiki Dump, 4.3 GB bz2](https://dumps.wikimedia.org/ruwiki/).
+2. Set [Util](core/src/main/java/org/ionkin/search/Util.java) `basePath` to directory with downloaded file.
+3. Create lemmas via lemmatization module.
+4. Create inverse index via index module.
+5. Run search-front.
+6. Use GUI to search.
 
 ## Pre-requirement
 - RAM about size of bz2 file. You need it to create and store index.

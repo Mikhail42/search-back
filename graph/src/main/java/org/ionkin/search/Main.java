@@ -11,11 +11,10 @@ import java.util.Collection;
 
 public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
-    static final String basePath = "/media/mikhail/Windows/Users/Misha/workspace/wiki-bz2/";
 
     public static void main(String... args) throws Exception {
         CompactHashMap<LightString, Integer> tokens = new CompactHashMap<>(new StringIntTranslator());
-        tokens.read(basePath + "freq/allTokens");
+        tokens.read(Util.basePath + "freq/allTokens");
         logger.debug("file is readed");
         Collection<Integer> values = tokens.values();
         tokens = null;
