@@ -17,6 +17,7 @@
         <module>ranking</module>
         <module>snippet</module>
         <module>collocation</module>
+        <module>xml-parser</module>
     </modules>
 
     <properties>
