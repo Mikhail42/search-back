@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Function;
 
 public class Indexer {
     private static final Logger logger = LoggerFactory.getLogger(Indexer.class);
@@ -22,7 +23,7 @@ public class Indexer {
             if (indexDir.isDirectory() && indexDir.list().length == 0) {
                 writeIndex();
                 joinIndex();
-                //buildTitleIndex();
+                buildTitleIndex();
             }
             logger.info("inverse index creation finished");
         } catch (Exception exc) {
@@ -64,12 +65,24 @@ public class Indexer {
         File[] dirs = Util.textDirs();
         ParallelFor.par(i -> {
             File dir = dirs[i];
-            StringBytesMap map = buildIndex(dir);
+            StringBytesMap map = buildIndex(dir, p -> p.getContent());
             map.write(Util.indexFolder + dir.getName());
         }, 0, dirs.length);
     }
 
-    private static StringBytesMap buildIndex(File wikiexractorSubDir) throws IOException {
+    private static void buildTitleIndex() throws IOException {
+        File[] dirs = Util.textDirs();
+        StringBytesMap[] sbms = new StringBytesMap[dirs.length];
+        ParallelFor.par(i -> {
+            File dir = dirs[i];
+            sbms[i] = buildIndex(dir, p -> p.getTitle());
+        }, 0, dirs.length);
+        LightString[] tokens = TokensStore.getTokens();
+        StringBytesMap joined = StringBytesMap.join(tokens, sbms);
+        joined.write(Util.titleIndexPath);
+    }
+
+    private static StringBytesMap buildIndex(File wikiexractorSubDir, Function<Page, String> getContent) throws IOException {
         String[] files = wikiexractorSubDir.list();
         Arrays.sort(files);
         final HashMap<LightString, List<Integer>> wordToPageIds = new HashMap<>();
@@ -77,81 +90,11 @@ public class Indexer {
             WikiParser wikiParser = new WikiParser(wikiexractorSubDir.getAbsolutePath() + "/" + file);
             wikiParser.getPages().forEach(page -> {
                 logger.trace("docId={}", page.getId());
-                Set<LightString> pageWords = extractWords(page.getContent());
+                Set<LightString> pageWords = extractWords(getContent.apply(page));
                 addWords(wordToPageIds, pageWords, page.getId());
             });
         }
         return compressMap(wordToPageIds);
-    }
-
-    private static void buildTitleIndex(String inDir) throws IOException {
-        String[] files = new File(inDir).list();
-        StringBytesMap global = new StringBytesMap();
-        ParallelFor.par(i -> {
-            logger.info("filename: {}", files[i]);
-            Map<Integer, Set<LightString>> idTitleMap = extractTitles(inDir + files[i]);
-            Map<LightString, byte[]> from = from(idTitleMap);
-            synchronized (global) {
-                join(global, from);
-            }
-        }, 0, files.length);
-        global.write(Util.titleIndexPath);
-    }
-
-    private static void join(StringBytesMap global, Map<LightString, byte[]> local) {
-        local.forEach((word, locInd) -> {
-            BytesRange range = global.get(word);
-            if (range != null && range.length() != 0) {
-                int[] idsGlob = Compressor.decompressVb(range);
-                int[] idsLoc = Compressor.decompressVb(locInd);
-                IntArray ar = new IntArray(idsGlob.length + idsLoc.length);
-                ar.add(idsGlob);
-                ar.add(idsLoc);
-                int[] res = ar.getAll();
-                Arrays.sort(res);
-                byte[] joined = Compressor.compressVbWithoutMemory(res);
-                global.put(word, new BytesRange(joined));
-            } else {
-                global.put(word, new BytesRange(locInd));
-            }
-        });
-    }
-
-    private static Map<LightString, byte[]> from(Map<Integer, Set<LightString>> rightIndex) {
-        Map<LightString, byte[]> resMap = new HashMap<>();
-        rightIndex.forEach((k, v) -> {
-            v.forEach(w -> {
-                byte[] inds = resMap.get(w);
-                if (inds != null) {
-                    int[] curInds = Compressor.decompressVb(inds);
-                    IntArray ar = new IntArray(curInds.length + 1);
-                    ar.add(curInds);
-                    ar.add(k);
-                    int[] res = ar.getAll();
-                    Arrays.sort(res);
-                    resMap.put(w, Compressor.compressVbWithoutMemory(res));
-                } else {
-                    resMap.put(w, VariableByte.compress(k));
-                }
-            });
-        });
-        return resMap;
-    }
-
-    private static Map<Integer, Set<LightString>> extractTitles(String absFileName) throws IOException {
-        WikiParser wikiParser = new WikiParser(absFileName);
-        Map<Integer, Set<LightString>> res = new HashMap<>();
-        wikiParser.getPages().forEach(page -> {
-            String[] ar = Util.splitPattern.split(page.getTitle());
-            Set<LightString> set = new HashSet<>();
-            for (String s : ar) {
-                String s2 = Util.normalize(s);
-                LightString word = new LightString(s2);
-                set.add(word);
-            }
-            res.put(page.getId(), set);
-        });
-        return res;
     }
 
     private static Set<LightString> extractWords(String pageContent) {
@@ -159,6 +102,7 @@ public class Indexer {
         CompactHashSet<LightString> pageWords = new CompactHashSet<>(new StringTranslator());
         words.forEach(word -> {
             String normalWord = Util.normalize(word);
+            // it is not good for title index, but without it it will be not so easy to create
             if (Util.searchable(normalWord)) {
                 pageWords.add(new LightString(normalWord));
             }
