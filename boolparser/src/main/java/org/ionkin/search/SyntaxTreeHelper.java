@@ -21,7 +21,7 @@ import static org.ionkin.search.Logic.or;
 import static org.scijava.parse.Operators.*;
 
 public class SyntaxTreeHelper {
-    private static Logger logger = LoggerFactory.getLogger(SyntaxTreeHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(SyntaxTreeHelper.class);
 
     private static final String closeBrace = "]\\)}\"";
     private static final String wordSymbol = Util.ruEnLowerSymbol;

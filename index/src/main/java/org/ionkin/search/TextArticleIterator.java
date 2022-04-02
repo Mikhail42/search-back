@@ -20,13 +20,23 @@ public class TextArticleIterator {
     private static int[] firstDocIds;
     private static CompactHashMap<Integer, IntIntPair> docidPositionMap;
 
+    private static boolean wasInit = false;
+
     static {
+        init();
+    }
+
+    static void init() {
+        if (wasInit) return;
         try {
+            if (!new File(Util.firstDocidFilenamePath).exists()) {
+                writeFirstDocidFilenameMap();
+            }
             firstdocidFilenameMap = readFirstDocidFilenameMap();
             firstDocIds = Ints.toArray(firstdocidFilenameMap.keySet());
             Arrays.sort(firstDocIds);
 
-            docidPositionMap = new CompactHashMap<>(new IntIntIntTranslator(), Util.basePath + "docPositions.chmiiiFast");
+            docidPositionMap = new CompactHashMap<>(new IntIntIntTranslator(), Util.docidPosPath);
         } catch (Exception e) {
             logger.error("Can't read firstdocidFilenameMap", e);
         }
@@ -106,27 +116,35 @@ public class TextArticleIterator {
             }
         }, 0, firstDocIds.length);
 
-        docidPositionMap.write("docPositions.chmiiiFast");
+        docidPositionMap.write(Util.docidPosPath);
     }
 
     static void writeFirstDocidFilenameMap() throws IOException {
         File folder = new File(Util.textPath);
-        String[] fileNames = folder.list();
-        Arrays.sort(fileNames);
-
+        File[] dirs = Arrays.stream(folder.listFiles())
+                .filter(f -> f.isDirectory() && f.getName().length() == 2).toArray(File[]::new);
+        Arrays.sort(dirs, Comparator.comparing(File::getName));
         Map<Integer, String> firstDocidFilenameMap = new HashMap<>();
-        for (String filename : fileNames) {
-            WikiParser wikiParser = new WikiParser(Util.textPath + filename);
-            List<Page> pages = wikiParser.getPages();
-            int firstDocId = pages.get(0).getId();
-            firstDocidFilenameMap.put(firstDocId, filename);
-            System.out.println(filename);
+
+        StringBuffer sb = new StringBuffer();
+        for (File dir : dirs) {
+            String[] fileNames = dir.list();
+            Arrays.sort(fileNames);
+            logger.debug(dir.getAbsolutePath());
+            for (String filename : fileNames) {
+                WikiParser wikiParser = new WikiParser(dir.getAbsolutePath() + "/" + filename);
+                List<Page> pages = wikiParser.getPages();
+                int firstDocId = pages.get(0).getId();
+                firstDocidFilenameMap.put(firstDocId, filename);
+                sb.append(dir.getName()).append("/").append(filename).append(", ").append(firstDocId).append("\n");
+            }
         }
+        FileUtils.write(new File(Util.firstDocidFilenamePath), sb.toString(), StandardCharsets.UTF_8);
     }
 
     static Map<Integer, String> readFirstDocidFilenameMap() throws IOException {
         Map<Integer, String> map = new HashMap<>();
-        File file = new File(Util.basePath + "firstDocidFilenameMap.csv");
+        File file = new File(Util.firstDocidFilenamePath);
         String content = FileUtils.readFileToString(file, StandardCharsets.UTF_8);
         String[] ar = content.split("\\R");
         for (String line : ar) {

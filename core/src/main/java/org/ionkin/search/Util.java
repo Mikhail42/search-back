@@ -16,6 +16,8 @@ public class Util {
     public static final String testPositionsPath = basePath + "testPositions.chmsp";
     public static final String tokensPath = basePath + "tokens.chsls";
     public static final String wordLemmPath = basePath + "lemm/allWordMap.chmss";
+    public static final String docidPosPath = basePath + "docPositions.chmiiiFast";
+    public static final String firstDocidFilenamePath = basePath + "firstDocidFilenameMap.csv";
 
     public static final String wordSymbol = "\\p{L}\\p{N}\u0301";
     public static final String ruEnLowerSymbol = "a-zа-я0-9";

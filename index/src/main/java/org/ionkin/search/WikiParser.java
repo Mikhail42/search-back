@@ -12,9 +12,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class WikiParser {
-
-    private static final String pat = "<doc id=\"(\\d+)\" title=\"([^\"]+)\">(.*?(?=</doc>))</doc>";
-    private static final Pattern pattern = Pattern.compile(pat, Pattern.DOTALL);
+   //<doc id="4" url="https://ru.wikipedia.org/wiki?curid=4" title="Базовая статья">
+   // Базовая статья
+   //</doc>
+    private static final String docPatternStr =
+           "<doc id=\"(\\d+)\" (.*?(?=title=))title=\"([^\"]+)\">(.*?(?=</doc>))</doc>";
+    private static final Pattern docPattern = Pattern.compile(docPatternStr, Pattern.DOTALL);
 
     private final String fileContent;
     private final ArrayList<Page> pages = new ArrayList<>();
@@ -28,7 +31,7 @@ public class WikiParser {
 
     public static Page parsePage(String filename, int startPosition, int length) throws IOException {
         String content = new String(IO.read(filename, startPosition, length), StandardCharsets.UTF_8);
-        Matcher m = pattern.matcher(content);
+        Matcher m = docPattern.matcher(content);
         if (m.find()) {
             int id = Integer.parseInt(m.group(1));
             String title = m.group(2);
@@ -40,7 +43,7 @@ public class WikiParser {
     }
 
     private void parseAllPages() {
-        Matcher m = pattern.matcher(fileContent);
+        Matcher m = docPattern.matcher(fileContent);
         int currentByteLength = 0;
         while (m.find()) {
             int id = Integer.parseInt(m.group(1));

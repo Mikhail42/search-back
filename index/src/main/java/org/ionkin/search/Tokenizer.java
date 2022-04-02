@@ -12,6 +12,7 @@ public class Tokenizer {
     private static final Logger logger = LoggerFactory.getLogger(Tokenizer.class);
 
     public static void main(String... args) throws Exception {
+        TextArticleIterator.init();
         tokens();
     }
 
