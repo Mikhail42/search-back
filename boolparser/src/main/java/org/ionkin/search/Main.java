@@ -94,7 +94,7 @@ public class Main {
         };
 
         String[] qs = Arrays.stream(ps).map(P::getQuery).collect(Collectors.toList()).toArray(new String[0]);
-        csv(qs, EvaluatorPerformance.loadTest(), 10);
+        csv(qs, EvaluatorPerformance.load(), 10);
     }
 
     private static void csv() throws Exception {
@@ -128,7 +128,7 @@ public class Main {
                 "28 винни пух и все все все\n" +
                 "29 все псы попадают в рай\n" +
                 "30 сколько ждал хатико").split("\n");
-        csv(qs, EvaluatorPerformance.loadTest(), 10);
+        csv(qs, EvaluatorPerformance.load(), 10);
     }
 
     private static void csv(String[] qs, EvaluatorPerformance evaluator, int count) throws Exception {

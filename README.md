@@ -4,7 +4,7 @@ For use GUI to search, see [this project](https://github.com/Mikhail42/search-fr
 
 ## Global pre-requirement
 - at least 12 GB free on disk
-- at least 5 GB RAM. 8 GB is good enough
+- at least 6 GB RAM. 8 GB is good enough
 - internet to download wikipedia dump
 - python 3
 - *nix OS preferred (see wikiextractor)
@@ -31,11 +31,15 @@ For use GUI to search, see [this project](https://github.com/Mikhail42/search-fr
    It may take about hour. Don’t forget to set -Xmx4096m, or else it may be OutOfMemory. See logs to trace progress.
    After than positions.chmsp should be created.
    This file contains map of (token -> (map of pageId → word positions on page)) in compact form.
-6. Execute `mvn clean install -DskipTests=true` in project directory in command line.
-7. Create lemmas via lemmatization module. Lemmas is used to search similar words. For that you need to download some dictionaries.
-8. Run [search-front](https://github.com/Mikhail42/search-front). 
+6. Run [EvaluatorPerformance](boolparser/src/main/java/org/ionkin/search/EvaluatorPerformance.java)
+   to create docids.chsi (set of doc id) and positions.sm (search map).
+   **Set -Xmx5096m before run, or else it may be OutOfMemory.**
+7. Execute `mvn clean install -DskipTests=true` in project directory in command line.
+   After than you can use libs in search-front project.
+8. Create lemmas via lemmatization module. Lemmas is used to search similar words. For that you need to download some dictionaries.
+9. Run [search-front](https://github.com/Mikhail42/search-front).
    For that, go to `search-front`, and execute `sbt run` in command line.
-9. Use GUI to search.
+10. Use GUI to search.
 
 ## Dictionary
 - CHM -- [CompactHashMap](core/src/main/java/org/ionkin/search/map/CompactHashMap.java).

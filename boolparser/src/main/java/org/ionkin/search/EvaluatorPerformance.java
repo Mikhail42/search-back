@@ -3,10 +3,13 @@ package org.ionkin.search;
 import org.ionkin.Ranking;
 import org.ionkin.search.map.*;
 import org.ionkin.search.model.Pair;
+import org.ionkin.search.set.CompactHashSet;
+import org.ionkin.search.set.IntTranslator;
 import org.scijava.parse.SyntaxTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -14,7 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class EvaluatorPerformance {
-    private static Logger logger = LoggerFactory.getLogger(EvaluatorPerformance.class);
+    private static final Logger logger = LoggerFactory.getLogger(EvaluatorPerformance.class);
     private static final int BOOL_COUNT = 100_000;
 
     private final IndexMap indexMap;
@@ -27,12 +30,11 @@ public class EvaluatorPerformance {
     }
 
     public static void main(String... args) throws Exception {
-        // TODO
-        loadTest();
+        load();
     }
 
     public static EvaluatorPerformance loadTestTest() throws IOException {
-        byte[] docsAsBytes = IO.read(Util.basePath + "docids.chsi");
+        byte[] docsAsBytes = IO.read(Util.docIdsPath);
         int[] allIds = Compressor.decompressVb(docsAsBytes);
 
         IndexMap indexMap = new IndexMap(new StringBytesMap(Util.basePath + "test.index"));
@@ -42,15 +44,37 @@ public class EvaluatorPerformance {
         return new EvaluatorPerformance(searchMap, indexMap, titleIndexMap, allIds);
     }
 
-    // @Deprecated
-    public static EvaluatorPerformance loadTest() throws IOException {
-        byte[] docsAsBytes = IO.read(Util.basePath + "docids.chsi");
+    public static void writeDocIds() throws IOException {
+        CompactHashSet<Integer> chsi = new CompactHashSet<>(new IntTranslator());
+        StringBytesMap sbm = new StringBytesMap(Util.titleIndexPath);
+        sbm.forEach((k, v) -> {
+            int[] pageIds = Compressor.decompressVb(v);
+            for (int pageId : pageIds) {
+                chsi.add(pageId);
+            }
+        });
+        chsi.write(Util.docIdsPath);
+    }
+
+    public static EvaluatorPerformance load() throws IOException {
+        if (!new File(Util.docidPosPath).exists()) {
+            writeDocIds();
+        }
+        byte[] docsAsBytes = IO.read(Util.docIdsPath);
         int[] allIds = Compressor.decompressVb(docsAsBytes);
 
         IndexMap titleIndex = new IndexMap(new StringBytesMap(Util.titleIndexPath));
         IndexMap indexMap = new IndexMap(new StringBytesMap(Util.indexPath));
-        SearchMap searchMap = new SearchMap(Util.basePath + "positions.sm");
-        //searchMap.write(Util.basePath + "positions.sm");
+        // read or write search map
+        File searchMapFile = new File(Util.searchMapPath);
+        final SearchMap searchMap;
+        if (!searchMapFile.exists()) {
+            StringPositionsMap positionsMap = new StringPositionsMap(Util.positionsPath);
+            searchMap = new SearchMap(positionsMap);
+            searchMap.write(searchMapFile.getAbsolutePath());
+        } else {
+            searchMap = new SearchMap(searchMapFile.getAbsolutePath());
+        }
 
         return new EvaluatorPerformance(searchMap, indexMap, titleIndex, allIds);
     }
