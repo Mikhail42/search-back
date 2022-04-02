@@ -31,9 +31,7 @@ public class Indexer {
 
     public static void joinIndex() throws IOException {
         logger.debug("try read tokens");
-        CompactHashSet<LightString> tokensMap = CompactHashSet.read(Util.tokensPath, new StringTranslator());
-        final LightString[] tokens = Util.toArray(tokensMap);
-        tokensMap = null;
+        final LightString[] tokens = TokensStore.getTokens();
 
         String[] files = new File(Util.indexFolder).list();
         Arrays.sort(files);
@@ -50,7 +48,7 @@ public class Indexer {
     }
 
     public static void writeIndex() {
-        File[] dirs = Util.textDirs;
+        File[] dirs = Util.textDirs();
         ParallelFor.par(i -> {
             File dir = dirs[i];
             StringBytesMap map = buildIndex(dir);

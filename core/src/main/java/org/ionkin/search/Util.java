@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 public class Util {
     public static final int threadPoolSize = 4;
     public static final String basePath = System.getProperty("user.home") + "/workspace/wiki-bz2/";
-    public static final String textPath = basePath + "text/";
+    public static String textPath = basePath + "text/";
     public static final String indexFolder = basePath + "index/";
     public static final String positionIndexFolder = basePath + "posindex/";
     public static final String indexPath = basePath + "index.chmsb";
@@ -33,9 +33,11 @@ public class Util {
 
     public static final Locale RU = new Locale("RU");
 
-    public static final File[] textDirs = Arrays.stream(new File(textPath).listFiles())
-            .filter(f -> f.isDirectory() && f.getName().length() == 2)
-            .sorted(Comparator.comparing(File::getName)).toArray(File[]::new);
+    public static final File[] textDirs() {
+        return Arrays.stream(new File(textPath).listFiles())
+                .filter(f -> f.isDirectory() && f.getName().length() == 2)
+                .sorted(Comparator.comparing(File::getName)).toArray(File[]::new);
+    }
 
     public static Set<LightString> lightStrings(String pageContent) {
         Iterable<String> words = splitPatternLazy.split(pageContent);

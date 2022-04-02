@@ -122,7 +122,7 @@ public class TextArticleIterator {
     static void writeFirstDocidFilenameMap() throws IOException {
         Map<Integer, String> firstDocidFilenameMap = new HashMap<>();
         StringBuffer sb = new StringBuffer();
-        for (File dir : Util.textDirs) {
+        for (File dir : Util.textDirs()) {
             String[] fileNames = dir.list();
             Arrays.sort(fileNames);
             logger.debug(dir.getAbsolutePath());
