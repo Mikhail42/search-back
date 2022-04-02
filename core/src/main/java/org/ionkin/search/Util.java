@@ -13,6 +13,7 @@ public class Util {
     public static final String indexFolder = basePath + "index/";
     public static final String positionIndexFolder = basePath + "posindex/";
     public static final String indexPath = basePath + "index.chmsb";
+    public static final String titleIndexPath = basePath + "titleindexNoLemm.sbm";
     public static final String testIndexPath = basePath + "testIndex.chmsb";
     public static final String positionsPath = basePath + "positions.chmsp";
     public static final String testPositionsPath = basePath + "testPositions.chmsp";

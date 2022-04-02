@@ -47,7 +47,7 @@ public class EvaluatorPerformance {
         byte[] docsAsBytes = IO.read(Util.basePath + "docids.chsi");
         int[] allIds = Compressor.decompressVb(docsAsBytes);
 
-        IndexMap titleIndex = new IndexMap(new StringBytesMap(Util.basePath + "titleindexNoLemm.sbm"));
+        IndexMap titleIndex = new IndexMap(new StringBytesMap(Util.titleIndexPath));
         IndexMap indexMap = new IndexMap(new StringBytesMap(Util.indexPath));
         SearchMap searchMap = new SearchMap(Util.basePath + "positions.sm");
         //searchMap.write(Util.basePath + "positions.sm");

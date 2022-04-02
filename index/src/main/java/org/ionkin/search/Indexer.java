@@ -84,7 +84,7 @@ public class Indexer {
                 join(global, from);
             }
         }, 0, files.length);
-        global.write(Util.basePath + "titleindexNoLemm.sbm");
+        global.write(Util.titleIndexPath);
     }
 
     private static void join(StringBytesMap global, Map<LightString, byte[]> local) {
