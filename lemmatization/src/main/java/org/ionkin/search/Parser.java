@@ -7,6 +7,7 @@ import org.ionkin.search.set.StringTranslator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -29,7 +30,17 @@ public class Parser {
             Pattern.compile("\\d+\\s(.*)\\s(.*)\\s+(NOUN|VERB|ADJ|PUNCT|PRON|ADV|NUM|X)\\s.*");
 
     public static void main(String... args) throws Exception {
-        lemmFixer();/*StringStringMap common = new StringStringMap(Util.basePath + "allWordMap.chmss");
+        if (!new File(Util.enLemmPath).exists()) {
+            writeEnglish(Util.basePath + "englishLemms0531"); // TODO
+        }
+        if (!new File(Util.ruLemmPath).exists()) {
+            writeRussian(null); // TODO
+        }
+        if (!new File(Util.wordLemmPath).exists()) {
+            joinEnRu();
+        }
+        lemmFixer();
+        /*StringStringMap common = new StringStringMap(wordLemmPath);
         StringStringMap fix = new StringStringMap();
         common.forEach((k, v) -> {
             if (k.startWith('-')) {
@@ -42,11 +53,11 @@ public class Parser {
     }
 
     public static void joinEnRu() throws IOException {
-        StringStringMap enWordMap = new StringStringMap(Util.basePath + "enWordMap.chmss");
-        StringStringMap ruWordMap = new StringStringMap(Util.basePath + "ruWordMap.chmss");
+        StringStringMap enWordMap = new StringStringMap(Util.enLemmPath);
+        StringStringMap ruWordMap = new StringStringMap(Util.ruLemmPath);
         StringStringMap common = ruWordMap;
         common.putAll(enWordMap);
-        common.write(Util.basePath + "allWordMap.chmss");
+        common.write(Util.wordLemmPath);
     }
 
     private static void lemmFixer() throws IOException {
@@ -61,11 +72,10 @@ public class Parser {
                 }
             }
         });
-        res.write(Util.basePath + "lemm/allWordMap.chmss");
+        res.write(Util.wordLemmPath);
     }
 
-    public static void writeEnglish(String filename) throws IOException {
-        String enFilename = Util.basePath + "englishLemms0531";
+    public static void writeEnglish(String enFilename) throws IOException {
         int nThreads = 4;
         String body = read(enFilename);
         String[] four = new String[nThreads];
@@ -97,7 +107,7 @@ public class Parser {
             bbm.forEach((k, v) -> wordMaps[i0].put(new LightString(k), new LightString(v)));
         }
         StringStringMap enWordMap = StringStringMap.join(wordMaps);
-        enWordMap.write(Util.basePath + "enWordMap.chmss");
+        enWordMap.write(Util.enLemmPath);
     }
 
     public static void writeRussian(String filename) throws Exception {
@@ -138,7 +148,7 @@ public class Parser {
             bbm.forEach((k, v) -> wordMaps[i0].put(new LightString(k), new LightString(v)));
         }
         StringStringMap russianWordMap = StringStringMap.join(wordMaps);
-        russianWordMap.write("ruWordMap.chmss");
+        russianWordMap.write(Util.ruLemmPath);
 
         CompactHashSet<LightString> foreignSet = new CompactHashSet<>(new StringTranslator());
         for (int i = 0; i < nThreads; i++) {
