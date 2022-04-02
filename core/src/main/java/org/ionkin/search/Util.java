@@ -2,6 +2,7 @@ package org.ionkin.search;
 
 import com.google.common.base.Splitter;
 
+import java.io.File;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -27,6 +28,10 @@ public class Util {
     public static Pattern searchablePatter = Pattern.compile("[" + ruEnLowerSymbol + "]+");
 
     public static final Locale RU = new Locale("RU");
+
+    public static final File[] textDirs = Arrays.stream(new File(textPath).listFiles())
+            .filter(f -> f.isDirectory() && f.getName().length() == 2)
+            .sorted(Comparator.comparing(File::getName)).toArray(File[]::new);
 
     public static Set<LightString> lightStrings(String pageContent) {
         Iterable<String> words = splitPatternLazy.split(pageContent);

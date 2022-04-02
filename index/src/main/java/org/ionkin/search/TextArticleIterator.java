@@ -120,14 +120,9 @@ public class TextArticleIterator {
     }
 
     static void writeFirstDocidFilenameMap() throws IOException {
-        File folder = new File(Util.textPath);
-        File[] dirs = Arrays.stream(folder.listFiles())
-                .filter(f -> f.isDirectory() && f.getName().length() == 2).toArray(File[]::new);
-        Arrays.sort(dirs, Comparator.comparing(File::getName));
         Map<Integer, String> firstDocidFilenameMap = new HashMap<>();
-
         StringBuffer sb = new StringBuffer();
-        for (File dir : dirs) {
+        for (File dir : Util.textDirs) {
             String[] fileNames = dir.list();
             Arrays.sort(fileNames);
             logger.debug(dir.getAbsolutePath());

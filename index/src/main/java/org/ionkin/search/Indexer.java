@@ -14,11 +14,19 @@ import java.util.*;
 public class Indexer {
     private static final Logger logger = LoggerFactory.getLogger(Indexer.class);
 
-    public static void main(String... args) throws Exception {
-        logger.debug("started");
-        writeIndex(Util.textPath, Util.indexFolder);
-        joinIndex();
-        //buildTitleIndex(Util.textPath);
+    public static void main(String... args) {
+        logger.info("started");
+        try {
+            File indexDir = new File(Util.indexFolder);
+            if (indexDir.exists() && indexDir.isDirectory() && indexDir.list().length == 0) {
+                writeIndex();
+                joinIndex();
+                buildTitleIndex(Util.textPath);
+            }
+        } catch (Exception exc) {
+            logger.error("Can't write index", exc);
+            exc.printStackTrace();
+        }
     }
 
     public static void joinIndex() throws IOException {
@@ -50,26 +58,28 @@ public class Indexer {
         map.write(Util.indexPath);
     }
 
-    public static void writeIndex(String inDir, String outDir) {
-        String[] files = new File(inDir).list();
+    public static void writeIndex() {
+        File[] dirs = Util.textDirs;
         ParallelFor.par(i -> {
-            String file = files[i];
-            StringBytesMap map = buildIndex(inDir + file);
-            map.write(outDir + file);
-        }, 0, files.length);
+            File dir = dirs[i];
+            StringBytesMap map = buildIndex(dir);
+            map.write(Util.indexFolder + dir.getName());
+        }, 0, dirs.length);
     }
 
-    private static StringBytesMap buildIndex(String absFileName) throws IOException {
-        WikiParser wikiParser = new WikiParser(absFileName);
-
-        final HashMap<LightString, List<Integer>> local = new HashMap<>();
-        wikiParser.getPages().forEach(page -> {
-            logger.trace("docId={}", page.getId());
-            Set<LightString> pageWords = extractWords(page.getContent());
-            addWords(local, pageWords, page.getId());
-        });
-
-        return compressMap(local);
+    private static StringBytesMap buildIndex(File wikiexractorSubDir) throws IOException {
+        String[] files = wikiexractorSubDir.list();
+        Arrays.sort(files);
+        final HashMap<LightString, List<Integer>> wordToPageIds = new HashMap<>();
+        for (String file : files) {
+            WikiParser wikiParser = new WikiParser(wikiexractorSubDir.getAbsolutePath() + "/" + file);
+            wikiParser.getPages().forEach(page -> {
+                logger.trace("docId={}", page.getId());
+                Set<LightString> pageWords = extractWords(page.getContent());
+                addWords(wordToPageIds, pageWords, page.getId());
+            });
+        }
+        return compressMap(wordToPageIds);
     }
 
     private static void buildTitleIndex(String inDir) throws IOException {
@@ -87,8 +97,8 @@ public class Indexer {
     }
 
     private static void join(StringBytesMap global, Map<LightString, byte[]> local) {
-        local.forEach((w, locInd) -> {
-            BytesRange range = global.get(w);
+        local.forEach((word, locInd) -> {
+            BytesRange range = global.get(word);
             if (range != null && range.length() != 0) {
                 int[] idsGlob = Compressor.decompressVb(range);
                 int[] idsLoc = Compressor.decompressVb(locInd);
@@ -98,9 +108,9 @@ public class Indexer {
                 int[] res = ar.getAll();
                 Arrays.sort(res);
                 byte[] joined = Compressor.compressVbWithoutMemory(res);
-                global.put(w, new BytesRange(joined));
+                global.put(word, new BytesRange(joined));
             } else {
-                global.put(w, new BytesRange(locInd));
+                global.put(word, new BytesRange(locInd));
             }
         });
     }
@@ -154,15 +164,15 @@ public class Indexer {
         return pageWords;
     }
 
-    private static void addWords(Map<LightString, List<Integer>> map, Set<LightString> pageWords, int docId) {
-        pageWords.forEach(w -> {
-            List<Integer> list = map.get(w);
-            if (list == null) {
-                list = new ArrayList<>();
-                list.add(docId);
-                map.put(w, list);
+    private static void addWords(Map<LightString, List<Integer>> wordToPageIds, Set<LightString> pageWords, int pageId) {
+        pageWords.forEach(word -> {
+            List<Integer> pageIds = wordToPageIds.get(word);
+            if (pageIds == null) {
+                pageIds = new ArrayList<>();
+                pageIds.add(pageId);
+                wordToPageIds.put(word, pageIds);
             } else {
-                list.add(docId);
+                pageIds.add(pageId);
             }
         });
     }
