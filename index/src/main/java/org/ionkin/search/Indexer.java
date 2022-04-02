@@ -23,7 +23,7 @@ public class Indexer {
 
     public static void joinIndex() throws IOException {
         logger.debug("try read tokens");
-        CompactHashSet<LightString> tokensMap = CompactHashSet.read(Util.dictionaryPath, new StringTranslator());
+        CompactHashSet<LightString> tokensMap = CompactHashSet.read(Util.tokensPath, new StringTranslator());
         final LightString[] tokens = Util.toArray(tokensMap);
         tokensMap = null;
 

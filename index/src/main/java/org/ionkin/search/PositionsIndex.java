@@ -57,7 +57,7 @@ public class PositionsIndex {
         String[] filenames = new File(Util.positionIndexFolder).list();
         Arrays.sort(filenames);
         logger.debug("fileIds read from {}. size: {}", Util.positionIndexFolder, filenames.length);
-        CompactHashSet<LightString> tokensMap = CompactHashSet.read(Util.dictionaryPath, new StringTranslator());
+        CompactHashSet<LightString> tokensMap = CompactHashSet.read(Util.tokensPath, new StringTranslator());
         LightString[] tokens = Util.toArray(tokensMap);
         tokensMap = null;
 

@@ -14,7 +14,7 @@ public class Util {
     public static final String testIndexPath = basePath + "testIndex.chmsb";
     public static final String positionsPath = basePath + "positions.chmsp";
     public static final String testPositionsPath = basePath + "testPositions.chmsp";
-    public static final String dictionaryPath = basePath + "allwords0606.chsls";
+    public static final String tokensPath = basePath + "tokens.chsls";
     public static final String wordLemmPath = basePath + "lemm/allWordMap.chmss";
 
     public static final String wordSymbol = "\\p{L}\\p{N}\u0301";

@@ -33,7 +33,7 @@ public class Tokenizer {
             }
         }
 
-        tokens.write(Util.dictionaryPath);
+        tokens.write(Util.tokensPath);
         logger.info("size: {}", tokens.size());
         logger.info("all");
     }
