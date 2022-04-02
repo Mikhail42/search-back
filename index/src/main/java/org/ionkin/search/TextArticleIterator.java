@@ -36,6 +36,9 @@ public class TextArticleIterator {
             firstDocIds = Ints.toArray(firstdocidFilenameMap.keySet());
             Arrays.sort(firstDocIds);
 
+            if (!new File(Util.docidPosPath).exists()) {
+                writeDocIdPositions();
+            }
             docidPositionMap = new CompactHashMap<>(new IntIntIntTranslator(), Util.docidPosPath);
         } catch (Exception e) {
             logger.error("Can't read firstdocidFilenameMap", e);
@@ -103,7 +106,7 @@ public class TextArticleIterator {
         return batch.iterator();
     }
 
-    static void writePositions() throws IOException {
+    static void writeDocIdPositions() throws IOException {
         CompactHashMap<Integer, IntIntPair> docidPositionMap =
                 new CompactHashMap<>(new IntIntIntTranslator());
         ParallelFor.par((i) -> {

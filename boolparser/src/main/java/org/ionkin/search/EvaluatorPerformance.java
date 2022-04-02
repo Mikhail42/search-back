@@ -57,7 +57,7 @@ public class EvaluatorPerformance {
     }
 
     public static EvaluatorPerformance load() throws IOException {
-        if (!new File(Util.docidPosPath).exists()) {
+        if (!new File(Util.docIdsPath).exists()) {
             writeDocIds();
         }
         byte[] docsAsBytes = IO.read(Util.docIdsPath);
