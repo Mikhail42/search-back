@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 public class Util {
+    public static final int threadPoolSize = 4;
     public static final String basePath = System.getProperty("user.home") + "/workspace/wiki-bz2/";
     public static final String textPath = basePath + "text/";
     public static final String indexFolder = basePath + "index/";

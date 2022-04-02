@@ -9,10 +9,10 @@ import java.util.concurrent.TimeUnit;
 
 public class ParallelFor {
 
-    private static Logger logger = LoggerFactory.getLogger(ParallelFor.class);
+    private static final Logger logger = LoggerFactory.getLogger(ParallelFor.class);
 
     public static void par(SupplierExc fun, int from, int until) {
-        ExecutorService exec = Executors.newFixedThreadPool(4);
+        ExecutorService exec = Executors.newFixedThreadPool(Util.threadPoolSize);
         try {
             for (int i = from; i < until; i++) {
                 final int i0 = i;
