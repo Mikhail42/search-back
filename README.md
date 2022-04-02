@@ -2,6 +2,16 @@
 This search libraries allow to create a search server for Russian Wikipedia.
 For use GUI to search, see [this project](https://github.com/Mikhail42/search-front).
 
+## Global pre-requirement
+- at least 12 GB free on disk
+- at least 5 GB RAM. 8 GB is good enough
+- internet to download wikipedia dump
+- python 3
+- *nix OS preferred (see wikiextractor)
+- java 11, mvn, sbt
+- understanding console applications
+- Intellij Idea Community Edition (optional)
+
 ## How to use
 1. Download [Russian Wiki Dump](https://dumps.wikimedia.org/ruwiki/). 4.3 GB bz2, unpacked size is 24 GB.
    Copy it to `$basePath = ~/workspace/wiki-bz2`. 
@@ -21,9 +31,11 @@ For use GUI to search, see [this project](https://github.com/Mikhail42/search-fr
    It may take about hour. Don’t forget to set -Xmx4096m, or else it may be OutOfMemory. See logs to trace progress.
    After than positions.chmsp should be created.
    This file contains map of (token -> (map of pageId → word positions on page)) in compact form.
-6. Create lemmas via lemmatization module. Lemmas is used to search similar words. For that you need to download some dictionaries.
-7. Run [search-front](https://github.com/Mikhail42/search-front).
-8. Use GUI to search.
+6. Execute `mvn clean install -DskipTests=true` in project directory in command line.
+7. Create lemmas via lemmatization module. Lemmas is used to search similar words. For that you need to download some dictionaries.
+8. Run [search-front](https://github.com/Mikhail42/search-front). 
+   For that, go to `search-front`, and execute `sbt run` in command line.
+9. Use GUI to search.
 
 ## Dictionary
 - CHM -- [CompactHashMap](core/src/main/java/org/ionkin/search/map/CompactHashMap.java).
