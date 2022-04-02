@@ -32,12 +32,20 @@ public class PositionsIndex {
     }
 
     public static void joinAll() throws Exception {
-        logger.info("joinBy10");
-        logger.debug("try read fileIds");
-        StringPositionsMap map1 = new StringPositionsMap(Util.basePath + "AA fMainN");
-        StringPositionsMap map2 = new StringPositionsMap(Util.basePath + "AZ fMainN");
-        logger.info("Both map read");
+        logger.info("Start read maps to join position indexes");
+        String postfix = "MainN";
+        StringPositionsMap map1 = new StringPositionsMap(Util.basePath + "AA.spm" + postfix);
+        StringPositionsMap map2 = new StringPositionsMap(Util.basePath + "AZ.spm" + postfix);
+        StringPositionsMap map3 = new StringPositionsMap(Util.basePath + "BY.spm" + postfix);
         System.gc();
+        logger.info("Start join all position indexes");
+        join2(map1, map2);
+        join2(map1, map3);
+        logger.info("try write final result");
+        map1.write(Util.positionsPath);
+    }
+
+    private static void join2(StringPositionsMap map1, StringPositionsMap map2) {
         map2.forEach((k, v2) -> {
             IntBytesMap v1 = map1.get(k);
             if (v1 != null) {
@@ -45,11 +53,9 @@ public class PositionsIndex {
                 map1.put(k, v1);
             }
         });
-        logger.info("Both map joined");
+        logger.info("maps joined");
         map2 = null;
         System.gc();
-        logger.info("try write final result");
-        map1.write(Util.positionsPath + "NWord");
     }
 
     public static void joinByN(int maxFilesInPack) throws Exception {
