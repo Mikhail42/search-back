@@ -9,20 +9,22 @@ import java.util.regex.Pattern;
 public class Util {
     public static final int threadPoolSize = 4;
     public static final String basePath = System.getProperty("user.home") + "/workspace/wiki-bz2/";
-    public static String textPath = basePath + "text/";
-    public static final String indexFolder = basePath + "index/";
-    public static final String positionIndexFolder = basePath + "posindex/";
-    public static final String indexPath = basePath + "index.chmsb";
-    public static final String titleIndexPath = basePath + "titleindexNoLemm.sbm";
-    public static final String testIndexPath = basePath + "testIndex.chmsb";
-    public static final String positionsPath = basePath + "positions.chmsp";
+    public static String textPath = basePath + "text/"; // dir with wikiextractor files
+    public static final String indexFolder = basePath + "index/"; // dir with inverse index temp files
+    public static final String positionIndexFolder = basePath + "posindex/"; // dir with inverse index with positions temp files
+    public static final String indexPath = basePath + "index.chmsb"; // inverse index
+    public static final String titleIndexPath = basePath + "titleindexNoLemm.sbm"; // inverse index for titles
+    public static final String testIndexPath = basePath + "testIndex.chmsb"; // test inverse index for fast check
+    public static final String positionsPath = basePath + "positions.chmsp"; // inverse index with positions
+    public static final String searchMapPath = basePath + "positions.sm"; // search map file
     public static final String testPositionsPath = basePath + "testPositions.chmsp";
-    public static final String tokensPath = basePath + "tokens.chsls";
+    public static final String tokensPath = basePath + "tokens.chsls"; // set of tokens (words) from wikipedia
     public static final String ruLemmPath = basePath + "lemm/ruWordMap.chmss";
     public static final String enLemmPath = basePath + "lemm/enWordMap.chmss";
     public static final String wordLemmPath = basePath + "lemm/allWordMap.chmss";
-    public static final String docidPosPath = basePath + "docPositions.chmiiiFast";
-    public static final String firstDocidFilenamePath = basePath + "firstDocidFilenameMap.csv";
+    public static final String docidPosPath = basePath + "docPositions.chmiiiFast"; // map of (docId -> position in wikiextractor file)
+    public static final String firstDocidFilenamePath = basePath + "firstDocidFilenameMap.csv"; // map of (docid -> filename) for first docs in files
+    public static final String docIdsPath = basePath + "docids.chsi"; // set of page ids
 
     public static final String wordSymbol = "\\p{L}\\p{N}\u0301";
     public static final String ruEnLowerSymbol = "a-zа-я0-9";
