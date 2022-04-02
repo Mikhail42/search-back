@@ -8,18 +8,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 
 public class PositionsIndex {
 
-    private static Logger logger = LoggerFactory.getLogger(PositionsIndex.class);
+    private static final Logger logger = LoggerFactory.getLogger(PositionsIndex.class);
 
     public static void main(String... args) throws Exception {
         try {
             logger.info("start read. with wait");
             //testJoin();
-            writePositionsByFileArticles(Util.textPath, Util.positionIndexFolder);
+            writePositionsByFileArticles(Util.positionIndexFolder);
             logger.info("positions written");
             joinByN(25);
             logger.info("positions joined by 25");
@@ -57,9 +58,7 @@ public class PositionsIndex {
         String[] filenames = new File(Util.positionIndexFolder).list();
         Arrays.sort(filenames);
         logger.debug("fileIds read from {}. size: {}", Util.positionIndexFolder, filenames.length);
-        CompactHashSet<LightString> tokensMap = CompactHashSet.read(Util.tokensPath, new StringTranslator());
-        LightString[] tokens = Util.toArray(tokensMap);
-        tokensMap = null;
+        LightString[] tokens = TokensStore.getTokens();
 
         for (int i = 0; i < filenames.length; i += n) {
             logger.debug("i={}", i);
@@ -77,19 +76,25 @@ public class PositionsIndex {
         }
     }
 
-    public static void writePositionsByFileArticles(String inDir, String outDir) {
+    public static void writePositionsByFileArticles(String outDir) throws IOException {
         logger.debug("article iterator created");
-        String[] files = new File(inDir).list();
-        Arrays.sort(files);
-        ParallelFor.par(i -> {
-            String filename = files[i];
-            Iterator<Page> iterator = TextArticleIterator.articleTextIterator(inDir + filename);
-            Map<LightString, IntBytesMap> local = positions(iterator);
-            StringPositionsMap compact = new StringPositionsMap();
-            compact.putAll(local);
-            compact.write(outDir + filename);
+        LightString[] tokens = TokensStore.getTokens();
+        for (File wikiExtractorSubDir : Util.textDirs()) {
+            String[] files = wikiExtractorSubDir.list();
+            Arrays.sort(files);
+            StringPositionsMap[] spms = new StringPositionsMap[files.length];
+            ParallelFor.par(i -> {
+                String fullFileName = wikiExtractorSubDir.getAbsolutePath() + "/" + files[i];
+                Iterator<Page> iterator = TextArticleIterator.articleTextIterator(fullFileName);
+                Map<LightString, IntBytesMap> local = positions(iterator);
+                spms[i] = new StringPositionsMap();
+                spms[i].putAll(local);
+            }, 0, files.length);
+            StringPositionsMap resultMap = StringPositionsMap.join(tokens, spms);
+            String filename = wikiExtractorSubDir.getName() + ".spm";
             logger.debug("success: {}", filename);
-        }, 0, files.length);
+            resultMap.write(outDir + filename);
+        }
     }
 
     static Map<LightString, IntBytesMap> positions(Iterator<Page> textArticleIterator) {

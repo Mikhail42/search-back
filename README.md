@@ -16,10 +16,13 @@ For use GUI to search, see [this project](https://github.com/Mikhail42/search-fr
    tokens contains all normalized unique words (both russian and english) from wikipedia.
 4. Run [Indexer](index/src/main/java/org/ionkin/search/Indexer.java) to create inverse index.
    It may take a few minutes (**set -Xmx4096m, or else it may take much more time**). See logs to trace progress.
-   After than index.chmsb will be created. This file contains map of (token -> list of pageId) in compact form.
-5. Create lemmas via lemmatization module.
-6. Run [search-front](https://github.com/Mikhail42/search-front).
-7. Use GUI to search.
+   After than index.chmsb should be created. This file contains map of (token -> list of pageId) in compact form.
+5. Run [PosIndexer](index/src/main/java/org/ionkin/search/PosIndexer.java) to create inverse index with word positions.
+   It may take about hour. Don’t forget to set -Xmx4096m, or else it may be OutOfMemory. See logs to trace progress.
+   After than posindex.??? should be created. This file contains map of (token -> (map of pageId → word positions on page)) in compact form.
+6. Create lemmas via lemmatization module. Lemmas is used to search similar words. For that you need to download some dictionaries.
+7. Run [search-front](https://github.com/Mikhail42/search-front).
+8. Use GUI to search.
 
 ## Dictionary
 - CHM -- [CompactHashMap](core/src/main/java/org/ionkin/search/map/CompactHashMap.java).
