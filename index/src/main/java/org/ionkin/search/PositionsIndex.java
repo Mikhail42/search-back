@@ -52,7 +52,7 @@ public class PositionsIndex {
         map1.write(Util.positionsPath + "NWord");
     }
 
-    public static void joinByN(int n) throws Exception {
+    public static void joinByN(int maxFilesInPack) throws Exception {
         logger.info("joinByN parallel");
         logger.debug("try read fileIds");
         String[] filenames = new File(Util.positionIndexFolder).list();
@@ -60,18 +60,19 @@ public class PositionsIndex {
         logger.debug("fileIds read from {}. size: {}", Util.positionIndexFolder, filenames.length);
         LightString[] tokens = TokensStore.getTokens();
 
-        for (int i = 0; i < filenames.length; i += n) {
-            logger.debug("i={}", i);
-            final int i0 = i;
-            final StringPositionsMap[] maps = new StringPositionsMap[n];
-            ParallelFor.par(j -> {
-                int ind = i0 + j;
-                maps[j] = new StringPositionsMap(Util.positionIndexFolder + filenames[ind]);
-                logger.info("maps[{}] read", j);
-            }, 0, n);
+        for (int startFileId = 0; startFileId < filenames.length; startFileId += maxFilesInPack) {
+            logger.debug("i={}", startFileId);
+            final int from = startFileId;
+            final int packSize = Math.min(maxFilesInPack, filenames.length - from);
+            final StringPositionsMap[] maps = new StringPositionsMap[packSize];
+            ParallelFor.par(idInPack -> {
+                int fileId = from + idInPack;
+                maps[idInPack] = new StringPositionsMap(Util.positionIndexFolder + filenames[fileId]);
+                logger.info("maps[{}] read", idInPack);
+            }, 0, packSize);
             logger.info("try join");
             StringPositionsMap res = StringPositionsMap.join(tokens, maps);
-            res.write(Util.basePath + filenames[i] + "MainN");
+            res.write(Util.basePath + filenames[startFileId] + "MainN");
             res = null;
         }
     }
