@@ -12,11 +12,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class WikiParser {
-   //<doc id="4" url="https://ru.wikipedia.org/wiki?curid=4" title="Базовая статья">
-   // Базовая статья
-   //</doc>
+    //<doc id="4" url="https://ru.wikipedia.org/wiki?curid=4" title="Базовая статья">
+    // Базовая статья
+    //</doc>
     private static final String docPatternStr =
-           "<doc id=\"(\\d+)\" (.*?(?=title=))title=\"([^\"]+)\">(.*?(?=</doc>))</doc>";
+           "<doc id=\"(\\d+)\" .*?(?=title=)title=\"([^\"]+)\">(.*?(?=</doc>))</doc>";
     private static final Pattern docPattern = Pattern.compile(docPatternStr, Pattern.DOTALL);
 
     private final String fileContent;
