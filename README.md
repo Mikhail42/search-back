@@ -4,19 +4,28 @@ For use GUI to search, see [this project](https://github.com/Mikhail42/search-fr
 
 ## How to use
 1. Download [Russian Wiki Dump](https://dumps.wikimedia.org/ruwiki/). 4.3 GB bz2, unpacked size is 24 GB.
+   Copy it to `$basePath = ~/workspace/wiki-bz2`. 
+   See [Util](core/src/main/java/org/ionkin/search/Util.java) `basePath`.
 2. Use Python [Wiki Extractor](https://github.com/attardi/wikiextractor) module to create instances of wiki files.
    In new version you also can use `xml-parser` module for that purpose, but it will be easy to use Wiki Extractor.
-   `cd <dir/with/wiki/dump> && python -m wikiextractor.WikiExtractor ruwiki-20211201-pages-articles-multistream.xml.bz2`
-3. Set [Util](core/src/main/java/org/ionkin/search/Util.java) `basePath` to directory with downloaded file.
-4. Run [Tokenizer](index/src/main/java/org/ionkin/search/Tokenizer.java).
-   After that there are 2 files in `basePath`: firstDocidFilenameMap.csv & tokens.chsls.
+   `cd $basePath && python -m wikiextractor.WikiExtractor ruwiki-20211201-pages-articles-multistream.xml.bz2`
+   It will take ~20 minutes. After that check `$basePath/text` directory.
+3. Run [Tokenizer](index/src/main/java/org/ionkin/search/Tokenizer.java).
+   After that there are 2 files in a `$basePath`: firstDocidFilenameMap.csv & tokens.chsls.
    firstDocidFilenameMap contains map of (first doc id in file -> fileName),
    tokens contains all normalized unique words (both russian and english) from wikipedia.
-5. Run [Indexer](index/src/main/java/org/ionkin/search/Indexer.java) to create inverse index.
-   It may take a few minutes. See logs to trace progress.
-6. Create lemmas via lemmatization module.
-7. Run search-front.
-8. Use GUI to search.
+4. Run [Indexer](index/src/main/java/org/ionkin/search/Indexer.java) to create inverse index.
+   It may take a few minutes (**set -Xmx4096m, or else it may take much more time**). See logs to trace progress.
+   After than index.chmsb will be created. This file contains map of (token -> list of pageId) in compact form.
+5. Create lemmas via lemmatization module.
+6. Run [search-front](https://github.com/Mikhail42/search-front).
+7. Use GUI to search.
+
+## Dictionary
+- CHM -- [CompactHashMap](core/src/main/java/org/ionkin/search/map/CompactHashMap.java).
+  chmss -- map of string -> string, chmsb -- map of string -> bytes.
+- CHS -- [CompactHashSet](core/src/main/java/org/ionkin/search/set/CompactHashSet.java).
+- CSV -- comma separated values. Text file format for tables
 
 ## Pre-requirement
 - RAM about size of bz2 file. You need it to create and store index (bz2 is 6x times compressed in our case).

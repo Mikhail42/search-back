@@ -15,16 +15,18 @@ public class Indexer {
     private static final Logger logger = LoggerFactory.getLogger(Indexer.class);
 
     public static void main(String... args) {
-        logger.info("started");
+        logger.info("start create inverse index");
         try {
             File indexDir = new File(Util.indexFolder);
-            if (indexDir.exists() && indexDir.isDirectory() && indexDir.list().length == 0) {
+            if (!indexDir.exists()) indexDir.mkdir();
+            if (indexDir.isDirectory() && indexDir.list().length == 0) {
                 writeIndex();
                 joinIndex();
-                buildTitleIndex(Util.textPath);
+                //buildTitleIndex();
             }
+            logger.info("inverse index creation finished");
         } catch (Exception exc) {
-            logger.error("Can't write index", exc);
+            logger.error("Can't create or write index", exc);
             exc.printStackTrace();
         }
     }
@@ -40,8 +42,19 @@ public class Indexer {
             maps[i] = new StringBytesMap(Util.indexFolder + files[i]);
         }, 0, files.length);
 
+        int by = files.length / Util.threadPoolSize;
+        int n = files.length / by + ((files.length % by == 0) ? 0 : 1);
+        logger.info("n = {}", n);
+        StringBytesMap[] mapsBy = new StringBytesMap[n];
+        ParallelFor.par(k -> {
+            StringBytesMap[] mapsToJoin = Arrays.copyOfRange(maps, k * by, Math.min((k + 1) * by, maps.length));
+            mapsBy[k] = StringBytesMap.join(tokens, mapsToJoin);
+            for (int i = k * by; i < Math.min((k + 1) * by, maps.length); i++) maps[i] = null;
+        }, 0, n);
+        System.gc();
+
         logger.debug("try join all");
-        StringBytesMap map = StringBytesMap.join(tokens, maps);
+        StringBytesMap map = StringBytesMap.join(tokens, mapsBy);
 
         logger.debug("try write all");
         map.write(Util.indexPath);
