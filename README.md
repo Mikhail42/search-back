@@ -13,6 +13,10 @@ For use GUI to search, see [this project](https://github.com/Mikhail42/search-fr
 - Intellij Idea Community Edition (optional)
 
 ## How to use
+**When you run Java, specify -Xmx5000m for better performance and to avoid of OutOfMemory error**.
+For example, you can run class via Intellij Idea, then copy command from Idea `run` tab,
+and add the option before main class.
+
 1. Download [Russian Wiki Dump](https://dumps.wikimedia.org/ruwiki/). 4.3 GB bz2, unpacked size is 24 GB.
    Copy it to `$basePath = ~/workspace/wiki-bz2`. 
    See [Util](core/src/main/java/org/ionkin/search/Util.java) `basePath`.
@@ -25,15 +29,14 @@ For use GUI to search, see [this project](https://github.com/Mikhail42/search-fr
    firstDocidFilenameMap contains map of (first doc id in file -> fileName),
    tokens contains all normalized unique words (both russian and english) from wikipedia.
 4. Run [Indexer](index/src/main/java/org/ionkin/search/Indexer.java) to create inverse index.
-   It may take a few minutes (**set -Xmx4096m, or else it may take much more time**). See logs to trace progress.
+   It may take a few minutes. See logs to trace progress.
    After than index.chmsb should be created. This file contains map of (token -> list of pageId) in compact form.
 5. Run [PositionsIndex](index/src/main/java/org/ionkin/search/PositionsIndex.java) to create inverse index with word positions.
-   It may take about hour. Don’t forget to set -Xmx4096m, or else it may be OutOfMemory. See logs to trace progress.
+   It may take about hour. See logs to trace progress.
    After than positions.chmsp should be created.
    This file contains map of (token -> (map of pageId → word positions on page)) in compact form.
 6. Run [EvaluatorPerformance](boolparser/src/main/java/org/ionkin/search/EvaluatorPerformance.java)
    to create docids.chsi (set of doc id) and positions.sm (search map).
-   **Set -Xmx5096m before run, or else it may be OutOfMemory.**
 7. Execute `mvn clean install -DskipTests=true` in project directory in command line.
    After than you can use libs in search-front project.
 8. Create lemmas via lemmatization module. Lemmas is used to search similar words. For that you need to download some dictionaries.
