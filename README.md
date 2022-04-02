@@ -6,11 +6,17 @@ For use GUI to search, see [this project](https://github.com/Mikhail42/search-fr
 1. Download [Russian Wiki Dump](https://dumps.wikimedia.org/ruwiki/). 4.3 GB bz2, unpacked size is 24 GB.
 2. Use Python [Wiki Extractor](https://github.com/attardi/wikiextractor) module to create instances of wiki files.
    In new version you also can use `xml-parser` module for that purpose, but it will be easy to use Wiki Extractor.
+   `cd <dir/with/wiki/dump> && python -m wikiextractor.WikiExtractor ruwiki-20211201-pages-articles-multistream.xml.bz2`
 3. Set [Util](core/src/main/java/org/ionkin/search/Util.java) `basePath` to directory with downloaded file.
-4. Create lemmas via lemmatization module.
-5. Create inverse index via index module.
-6. Run search-front.
-7. Use GUI to search.
+4. Run [Tokenizer](index/src/main/java/org/ionkin/search/Tokenizer.java).
+   After that there are 2 files in `basePath`: firstDocidFilenameMap.csv & tokens.chsls.
+   firstDocidFilenameMap contains map of (first doc id in file -> fileName),
+   tokens contains all normalized unique words (both russian and english) from wikipedia.
+5. Run [Indexer](index/src/main/java/org/ionkin/search/Indexer.java) to create inverse index.
+   It may take a few minutes. See logs to trace progress.
+6. Create lemmas via lemmatization module.
+7. Run search-front.
+8. Use GUI to search.
 
 ## Pre-requirement
 - RAM about size of bz2 file. You need it to create and store index (bz2 is 6x times compressed in our case).
