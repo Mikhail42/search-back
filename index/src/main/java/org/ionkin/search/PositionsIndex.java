@@ -40,7 +40,11 @@ public class PositionsIndex {
         }
     }
 
-    public static void joinAll() throws Exception {
+    public static StringPositionsMap readIndex() throws IOException {
+        return new StringPositionsMap(Util.positionsPath);
+    }
+
+    private static void joinAll() throws Exception {
         logger.info("Start read maps to join position indexes");
         String postfix = "MainN";
         StringPositionsMap map1 = new StringPositionsMap(Util.basePath + "AA.spm" + postfix);
@@ -67,7 +71,7 @@ public class PositionsIndex {
         System.gc();
     }
 
-    public static void joinByN(int maxFilesInPack) throws Exception {
+    private static void joinByN(int maxFilesInPack) throws Exception {
         logger.info("joinByN parallel");
         logger.debug("try read fileIds");
         String[] filenames = new File(Util.positionIndexFolder).list();
@@ -92,7 +96,7 @@ public class PositionsIndex {
         }
     }
 
-    public static void writePositionsByFileArticles(String outDir) throws IOException {
+    private static void writePositionsByFileArticles(String outDir) throws IOException {
         logger.debug("article iterator created");
         LightString[] tokens = TokensStore.getTokens();
         for (File wikiExtractorSubDir : Util.textDirs()) {
@@ -113,7 +117,7 @@ public class PositionsIndex {
         }
     }
 
-    static Map<LightString, IntBytesMap> positions(Iterator<Page> textArticleIterator) {
+    private static Map<LightString, IntBytesMap> positions(Iterator<Page> textArticleIterator) {
         Map<LightString, IntBytesMap> local = new HashMap<>();
 
         while (textArticleIterator.hasNext()) {
@@ -140,7 +144,7 @@ public class PositionsIndex {
         return local;
     }
 
-    static Map<LightString, List<Integer>> positionsAtPage(String articleText) {
+    private static Map<LightString, List<Integer>> positionsAtPage(String articleText) {
         Map<LightString, List<Integer>> res = new HashMap<>();
         Matcher wordMatcher = Util.wordPattern.matcher(articleText);
         Matcher splitMatcher = Util.splitPattern.matcher(articleText);
