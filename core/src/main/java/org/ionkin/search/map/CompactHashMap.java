@@ -149,32 +149,26 @@ public class CompactHashMap<K, V> extends AbstractMap<K, V> implements Serializa
     }
 
     public void read(String filename) throws IOException {
-        try (final FileChannel readChannel = new RandomAccessFile(filename, "r").getChannel()) {
-            final long fileLength0 = readChannel.size();
-            logger.info("read from {}. fileLength0={}", filename, fileLength0);
-            if (fileLength0 < Integer.MAX_VALUE) {
-                final ByteBuffer readBuffer = readChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileLength0);
-                this.size = readBuffer.getInt();
-                this.version = readBuffer.getInt();
-                this.filled = readBuffer.getInt();
-                this.lengthBits = readBuffer.getInt();
-                this.table = new byte[1 << lengthBits][];
+        try (DataInputStream inputStream = new DataInputStream(new FileInputStream(filename))) {
+            logger.info("read map from {}", filename);
+            this.size = inputStream.readInt();
+            this.version = inputStream.readInt();
+            this.filled = inputStream.readInt();
+            this.lengthBits = inputStream.readInt();
+            this.table = new byte[1 << lengthBits][];
 
-                int compArLength = readBuffer.getInt();
-                byte[] compAr = new byte[compArLength];
-                readBuffer.get(compAr);
+            int notNullRowIdsCompressedLength = inputStream.readInt();
+            byte[] notNullRowIdsCompressed = new byte[notNullRowIdsCompressedLength];
+            inputStream.read(notNullRowIdsCompressed);
 
-                int[] ar = Compressor.decompressVb(compAr);
-                logger.info("Common info is read. Try read columns (size={})", size);
-                for (int ind : ar) {
-                    int length = VariableByte.uncompressFirst(readBuffer);
-                    table[ind] = new byte[length];
-                    readBuffer.get(table[ind]);
-                }
-                logger.info("read success");
-            } else {
-                throw new IllegalArgumentException();
+            int[] notNullRowIds = Compressor.decompressVb(notNullRowIdsCompressed);
+            logger.info("Common info is read. Try read columns (size={})", size);
+            for (int rowId : notNullRowIds) {
+                int length = VariableByte.uncompressFirst(inputStream);
+                table[rowId] = new byte[length];
+                inputStream.read(table[rowId]);
             }
+            logger.info("read success");
         }
     }
 
