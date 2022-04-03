@@ -44,6 +44,11 @@ and add the option before main class.
    For that, go to `search-front`, and execute `sbt run` in command line.
 10. Use GUI to search.
 
+If you want to test it on small amount of wiki pages, you can, for example, rename `text` dir to `full-text`,
+create `text` dir with at least 4 folders from `full-text` (see Util#threadPoolSize), and execute Java code.
+If you want to remove generated files (you **need** to do it, if you want to regenerate them),
+you can run [script](clean-generated-files.sh).
+
 ## Dictionary
 - CHM -- [CompactHashMap](core/src/main/java/org/ionkin/search/map/CompactHashMap.java).
   chmss -- map of string -> string, chmsb -- map of string -> bytes.
