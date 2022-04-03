@@ -16,18 +16,27 @@ public class PositionsIndex {
 
     private static final Logger logger = LoggerFactory.getLogger(PositionsIndex.class);
 
-    public static void main(String... args) throws Exception {
+    public static void main(String... args) {
+        init();
+    }
+
+    public static void init() {
         try {
             logger.info("start read. with wait");
-            //testJoin();
-            writePositionsByFileArticles(Util.positionIndexFolder);
-            logger.info("positions written");
-            joinByN(25);
-            logger.info("positions joined by 25");
-            joinAll();
-            logger.info("stop");
+            File positionIndexDir = new File(Util.positionIndexFolder);
+            if (!positionIndexDir.exists()) positionIndexDir.mkdir();
+            if (positionIndexDir.list().length == 0) {
+                writePositionsByFileArticles(Util.positionIndexFolder);
+                logger.info("positions written");
+                joinByN(25);
+                logger.info("positions joined by 25");
+                joinAll();
+                logger.info("stop");
+            } else {
+                logger.info("position index already exists");
+            }
         } catch (Exception e) {
-            logger.error("", e);
+            logger.error("Can't init position index", e);
         }
     }
 

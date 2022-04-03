@@ -24,7 +24,7 @@ public class Indexer {
         try {
             File indexDir = new File(Util.indexFolder);
             if (!indexDir.exists()) indexDir.mkdir();
-            if (indexDir.isDirectory() && indexDir.list().length == 0) {
+            if (indexDir.list().length == 0) {
                 logger.info("start create inverse index");
                 writeIndex();
                 joinIndex();
