@@ -16,23 +16,38 @@ public class Indexer {
     private static final Logger logger = LoggerFactory.getLogger(Indexer.class);
 
     public static void main(String... args) {
-        logger.info("start create inverse index");
+        init();
+    }
+
+    public static void init() {
+        logger.info("start create inverse index if not exist");
         try {
             File indexDir = new File(Util.indexFolder);
             if (!indexDir.exists()) indexDir.mkdir();
             if (indexDir.isDirectory() && indexDir.list().length == 0) {
+                logger.info("start create inverse index");
                 writeIndex();
                 joinIndex();
                 buildTitleIndex();
+                logger.info("inverse index creation finished");
+            } else {
+                logger.info("inverse index already exists");
             }
-            logger.info("inverse index creation finished");
         } catch (Exception exc) {
             logger.error("Can't create or write index", exc);
             exc.printStackTrace();
         }
     }
 
-    public static void joinIndex() throws IOException {
+    public static StringBytesMap readIndex() throws IOException {
+        return new StringBytesMap(Util.indexPath);
+    }
+
+    public static StringBytesMap readTitleIndex() throws IOException {
+        return new StringBytesMap(Util.titleIndexPath);
+    }
+
+    private static void joinIndex() throws IOException {
         logger.debug("try read tokens");
         final LightString[] tokens = TokensStore.getTokens();
 
@@ -61,7 +76,7 @@ public class Indexer {
         map.write(Util.indexPath);
     }
 
-    public static void writeIndex() {
+    private static void writeIndex() {
         File[] dirs = Util.textDirs();
         ParallelFor.par(i -> {
             File dir = dirs[i];

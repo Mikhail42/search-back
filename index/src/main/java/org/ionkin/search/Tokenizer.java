@@ -13,6 +13,10 @@ public class Tokenizer {
     private static final Logger logger = LoggerFactory.getLogger(Tokenizer.class);
 
     public static void main(String... args) throws Exception {
+        init();
+    }
+
+    public static void init() throws Exception {
         TextArticleIterator.init();
         if (!new File(Util.tokensPath).exists()) {
             writeTokens();
