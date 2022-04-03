@@ -9,7 +9,8 @@ package org.ionkin.search;
 
 import com.google.common.primitives.Ints;
 
-import java.nio.ByteBuffer;
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -153,20 +154,20 @@ public class VariableByte {
         return v;
     }
 
-    public static int uncompressFirst(ByteBuffer readBuffer) {
-        int a = readBuffer.get();
+    public static int uncompressFirst(DataInputStream readBuffer) throws IOException {
+        int a = readBuffer.readByte();
         int v = a & 0x7F;
         if (a >= 0) {
-            a = readBuffer.get();
+            a = readBuffer.readByte();
             v = ((a & 0x7F) << 7) | v;
             if (a >= 0) {
-                a = readBuffer.get();
+                a = readBuffer.readByte();
                 v = ((a & 0x7F) << 14) | v;
                 if (a >= 0) {
-                    a = readBuffer.get();
+                    a = readBuffer.readByte();
                     v = ((a & 0x7F) << 21) | v;
                     if (a >= 0) {
-                        a = readBuffer.get();
+                        a = readBuffer.readByte();
                         v = ((a & 0x7F) << 28) | v;
                     }
                 }
