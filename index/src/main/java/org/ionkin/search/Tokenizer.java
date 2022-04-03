@@ -5,6 +5,7 @@ import org.ionkin.search.set.StringTranslator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.Iterator;
 import java.util.regex.Pattern;
 
@@ -13,10 +14,12 @@ public class Tokenizer {
 
     public static void main(String... args) throws Exception {
         TextArticleIterator.init();
-        tokens();
+        if (!new File(Util.tokensPath).exists()) {
+            writeTokens();
+        }
     }
 
-    public static void tokens() throws Exception {
+    public static void writeTokens() throws Exception {
         logger.info("start get tokens");
         CompactHashSet<LightString> tokens = new CompactHashSet<>(new StringTranslator());
 
