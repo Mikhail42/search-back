@@ -24,6 +24,9 @@ import java.util.stream.Stream;
 public class Main {
     private static Logger logger = LoggerFactory.getLogger(Main.class);
 
+    public static final String testIndexPath = Util.basePath + "testIndex.chmsb"; // test inverse index for fast check
+    public static final String testPositionsPath = Util.basePath + "testPositions.chmsp";
+
     public static void main(String... args) throws Exception {
         logger.info("start Main");
         pTest();
@@ -242,12 +245,12 @@ public class Main {
         StringPositionsMap spMap = new StringPositionsMap(Util.positionsPath);
         StringPositionsMap testSearch = new StringPositionsMap();
         words.forEach(w -> testSearch.put(w, spMap.get(w)));
-        testSearch.write(Util.testPositionsPath);
+        testSearch.write(testPositionsPath);
 
-        StringBytesMap indexMap = new StringBytesMap(Util.testIndexPath);
+        StringBytesMap indexMap = new StringBytesMap(testIndexPath);
         StringBytesMap testIndexMap = new StringBytesMap();
         words.forEach(w -> testIndexMap.put(w, indexMap.get(w)));
-        testIndexMap.write(Util.testIndexPath);
+        testIndexMap.write(testIndexPath);
     }
 
     private static void write(String inputFile, String outFile) throws IOException {

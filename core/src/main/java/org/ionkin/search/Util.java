@@ -14,10 +14,8 @@ public class Util {
     public static final String positionIndexFolder = basePath + "posindex/"; // dir with inverse index with positions temp files
     public static final String indexPath = basePath + "index.chmsb"; // inverse index
     public static final String titleIndexPath = basePath + "titleindexNoLemm.sbm"; // inverse index for titles
-    public static final String testIndexPath = basePath + "testIndex.chmsb"; // test inverse index for fast check
     public static final String positionsPath = basePath + "positions.chmsp"; // inverse index with positions
     public static final String searchMapPath = basePath + "positions.sm"; // search map file
-    public static final String testPositionsPath = basePath + "testPositions.chmsp";
     public static final String tokensPath = basePath + "tokens.chsls"; // set of tokens (words) from wikipedia
     public static final String ruLemmPath = basePath + "lemm/ruWordMap.chmss";
     public static final String enLemmPath = basePath + "lemm/enWordMap.chmss";
