@@ -22,7 +22,7 @@ public class PositionsIndex {
 
     public static void init() {
         try {
-            logger.info("start read. with wait");
+            logger.info("start init position index (if not exists)");
             File positionIndexDir = new File(Util.positionIndexFolder);
             if (!positionIndexDir.exists()) positionIndexDir.mkdir();
             if (positionIndexDir.list().length == 0) {

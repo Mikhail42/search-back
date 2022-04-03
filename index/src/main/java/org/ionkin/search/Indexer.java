@@ -26,9 +26,8 @@ public class Indexer {
             if (!indexDir.exists()) indexDir.mkdir();
             if (indexDir.list().length == 0) {
                 logger.info("start create inverse index");
-                writeIndex();
+                writeIndexes();
                 joinIndex();
-                buildTitleIndex();
                 logger.info("inverse index creation finished");
             } else {
                 logger.info("inverse index already exists");
@@ -54,19 +53,19 @@ public class Indexer {
         String[] files = new File(Util.indexFolder).list();
         Arrays.sort(files);
         StringBytesMap[] maps = new StringBytesMap[files.length];
-        ParallelFor.par(i -> {
+        for (int i = 0; i < files.length; i++) {
             maps[i] = new StringBytesMap(Util.indexFolder + files[i]);
-        }, 0, files.length);
+        }
 
         int by = files.length / Util.threadPoolSize;
         int n = files.length / by + ((files.length % by == 0) ? 0 : 1);
         logger.info("n = {}", n);
         StringBytesMap[] mapsBy = new StringBytesMap[n];
-        ParallelFor.par(k -> {
+        for (int k = 0; k < n; k++) {
             StringBytesMap[] mapsToJoin = Arrays.copyOfRange(maps, k * by, Math.min((k + 1) * by, maps.length));
             mapsBy[k] = StringBytesMap.join(tokens, mapsToJoin);
             for (int i = k * by; i < Math.min((k + 1) * by, maps.length); i++) maps[i] = null;
-        }, 0, n);
+        }
         System.gc();
 
         logger.debug("try join all");
@@ -76,25 +75,20 @@ public class Indexer {
         map.write(Util.indexPath);
     }
 
-    private static void writeIndex() {
+    private static void writeIndexes() throws IOException {
         File[] dirs = Util.textDirs();
-        ParallelFor.par(i -> {
-            File dir = dirs[i];
-            StringBytesMap map = buildIndex(dir, p -> p.getContent());
-            map.write(Util.indexFolder + dir.getName());
-        }, 0, dirs.length);
-    }
+        StringBytesMap[] titleIndexForDirs = new StringBytesMap[dirs.length];
 
-    private static void buildTitleIndex() throws IOException {
-        File[] dirs = Util.textDirs();
-        StringBytesMap[] sbms = new StringBytesMap[dirs.length];
-        ParallelFor.par(i -> {
+        for (int i=0; i<dirs.length; i++) {
             File dir = dirs[i];
-            sbms[i] = buildIndex(dir, p -> p.getTitle());
-        }, 0, dirs.length);
+            titleIndexForDirs[i] = buildIndex(dir, p -> p.getTitle());
+            StringBytesMap indexForDir = buildIndex(dir, p -> p.getContent());
+            indexForDir.write(Util.indexFolder + dir.getName());
+        }
+
         LightString[] tokens = TokensStore.getTokens();
-        StringBytesMap joined = StringBytesMap.join(tokens, sbms);
-        joined.write(Util.titleIndexPath);
+        StringBytesMap joinedTitleIndex = StringBytesMap.join(tokens, titleIndexForDirs);
+        joinedTitleIndex.write(Util.titleIndexPath);
     }
 
     private static StringBytesMap buildIndex(File wikiexractorSubDir, Function<Page, String> getContent) throws IOException {
