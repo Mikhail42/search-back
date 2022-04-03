@@ -21,7 +21,9 @@ public class TextArticleIteratorTest {
     @Test
     public void readFirstDocidFilenameMap() throws Exception {
         Map<Integer, String> map = TextArticleIterator.readFirstDocidFilenameMap();
-        assertEquals(map.get(7), "AA f");
+        assertTrue(map.size() > 1000); // wikiextractor generate a few thousand files for Russian Wikipedia
+        assertTrue(map.size() < 100_000); // a few thousands, not a million
+        assertEquals(map.get(4), "AA/wiki_00"); // first id in Russian Wikipedia is 4
     }
 
     @Test
@@ -29,8 +31,8 @@ public class TextArticleIteratorTest {
         Iterator<Page> pageIterator = TextArticleIterator.articleTextIterator();
         assertNotNull(pageIterator);
         assertTrue(pageIterator.hasNext());
-        Page litva = pageIterator.next();
-        assertEquals(7, litva.getId());
-        assertEquals("Литва", litva.getTitle());
+        Page firstPage = pageIterator.next();
+        assertEquals(4, firstPage.getId());
+        assertEquals("Базовая статья", firstPage.getTitle());
     }
 }
