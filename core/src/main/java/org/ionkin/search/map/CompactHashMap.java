@@ -30,9 +30,7 @@ import org.ionkin.search.VariableByte;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.io.Serializable;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.*;
@@ -103,21 +101,24 @@ public class CompactHashMap<K, V> extends AbstractMap<K, V> implements Serializa
         logger.info("try write map to {}", filename);
         int[] notNullRowIds = notNullRowIds();
         byte[] notNullRowIdsCompressed = Compressor.compressVbWithMemory(notNullRowIds);
-        long sizeInBytes = sizeOfTableWithLength() + notNullRowIdsCompressed.length + 20;
 
-        try (FileChannel rwChannel = new RandomAccessFile(filename, "rw").getChannel()) {
-            ByteBuffer wrBuf = rwChannel.map(FileChannel.MapMode.READ_WRITE, 0, sizeInBytes);
-            wrBuf.putInt(this.size);
-            wrBuf.putInt(this.version);
-            wrBuf.putInt(this.filled);
-            wrBuf.putInt(this.lengthBits);
-            wrBuf.putInt(notNullRowIdsCompressed.length);
-            wrBuf.put(notNullRowIdsCompressed);
+        // https://stackoverflow.com/questions/47112296/how-to-write-large-binary-data-fast-in-java
+        try (DataOutputStream wrBuf = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(filename)))) {
+            wrBuf.writeInt(this.size);
+            wrBuf.writeInt(this.version);
+            wrBuf.writeInt(this.filled);
+            wrBuf.writeInt(this.lengthBits);
+            wrBuf.writeInt(notNullRowIdsCompressed.length);
+            wrBuf.write(notNullRowIdsCompressed);
+            wrBuf.flush();
+
             logger.info("common info written to {}", filename);
+            int inc = 0;
             for (int rowId : notNullRowIds) {
-                wrBuf.put(VariableByte.compress(table[rowId].length));
-                wrBuf.put(table[rowId]);
+                wrBuf.write(VariableByte.compress(table[rowId].length));
+                wrBuf.write(table[rowId]);
                 table[rowId] = null;
+                if (inc++ % 100 == 0) wrBuf.flush();
             }
         }
         logger.info("map is written to {}", filename);
