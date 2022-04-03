@@ -93,60 +93,58 @@ public class CompactHashMap<K, V> extends AbstractMap<K, V> implements Serializa
         return size;
     }
 
+    private int[] notNullRowIds() {
+        List<Integer> notNullIndex = new ArrayList<>(table.length);
+        for (int i=0; i<table.length; i++) if (table[i] != null) notNullIndex.add(i);
+        return Ints.toArray(notNullIndex);
+    }
+
     public void write(String filename) throws IOException {
         logger.info("try write map to {}", filename);
-        List<Integer> notNullIndex = new ArrayList<>();
-        for (int i=0; i<table.length; i++) if (table[i] != null) notNullIndex.add(i);
-        int[] ar = Ints.toArray(notNullIndex);
-        byte[] compAr = Compressor.compressVbWithMemory(ar);
-        long sizeOfTable = sizeOfTableWithLength();
-        long size = sizeOfTable + compAr.length + 20;
+        int[] notNullRowIds = notNullRowIds();
+        byte[] notNullRowIdsCompressed = Compressor.compressVbWithMemory(notNullRowIds);
+        long sizeInBytes = sizeOfTableWithLength() + notNullRowIdsCompressed.length + 20;
 
-        if (size < Integer.MAX_VALUE) {
-            // TODO: may be exclude file for this?
-            try (FileChannel rwChannel = new RandomAccessFile(filename, "rw").getChannel()) {
-                ByteBuffer wrBuf = rwChannel.map(FileChannel.MapMode.READ_WRITE, 0, size);
-                wrBuf.putInt(this.size);
-                wrBuf.putInt(this.version);
-                wrBuf.putInt(this.filled);
-                wrBuf.putInt(this.lengthBits);
-                wrBuf.putInt(compAr.length);
-                wrBuf.put(compAr);
-                logger.info("common info written to {}", filename);
-                for (int i : ar) {
-                    wrBuf.put(VariableByte.compress(table[i].length));
-                    wrBuf.put(table[i]);
-                    table[i] = null;
-                }
+        try (FileChannel rwChannel = new RandomAccessFile(filename, "rw").getChannel()) {
+            ByteBuffer wrBuf = rwChannel.map(FileChannel.MapMode.READ_WRITE, 0, sizeInBytes);
+            wrBuf.putInt(this.size);
+            wrBuf.putInt(this.version);
+            wrBuf.putInt(this.filled);
+            wrBuf.putInt(this.lengthBits);
+            wrBuf.putInt(notNullRowIdsCompressed.length);
+            wrBuf.put(notNullRowIdsCompressed);
+            logger.info("common info written to {}", filename);
+            for (int rowId : notNullRowIds) {
+                wrBuf.put(VariableByte.compress(table[rowId].length));
+                wrBuf.put(table[rowId]);
+                table[rowId] = null;
             }
-            logger.info("map is written to {}", filename);
-        } else {
-            throw new IllegalArgumentException();
         }
+        logger.info("map is written to {}", filename);
     }
 
     public byte[] fastSerialization() {
-        List<Integer> notNullIndex = new ArrayList<>();
-        for (int i=0; i<table.length; i++) if (table[i] != null) notNullIndex.add(i);
-        int[] ar = Ints.toArray(notNullIndex);
-        byte[] compAr = Compressor.compressVbWithMemory(ar);
-        long sizeOfTable = sizeOfTableWithLength();
-        long size = sizeOfTable + compAr.length + 20;
-        if (size < Integer.MAX_VALUE) {
-            byte[] content = new byte[(int)size];
+        int[] notNullRowIds = notNullRowIds();
+        byte[] notNullRowIdsCompressed = Compressor.compressVbWithMemory(notNullRowIds);
+        long sizeInBytes = sizeOfTableWithLength() + notNullRowIdsCompressed.length + 20;
+
+        if (sizeInBytes < Integer.MAX_VALUE) {
+            byte[] content = new byte[(int) sizeInBytes];
             IO.putInt(content, this.size, 0);
             IO.putInt(content, this.version, 4);
             IO.putInt(content, this.filled, 8);
             IO.putInt(content, this.lengthBits, 12);
-            IO.putInt(content, compAr.length, 16);
-            System.arraycopy(compAr, 0, content, 20, compAr.length);
-            int pos = 20 + compAr.length;
-            for (int i : ar) {
+            IO.putInt(content, notNullRowIdsCompressed.length, 16);
+            System.arraycopy(notNullRowIdsCompressed, 0, content, 20, notNullRowIdsCompressed.length);
+            int pos = 20 + notNullRowIdsCompressed.length;
+            for (int i : notNullRowIds) {
                 IO.putArrayBytesWithLength(content, table[i], pos);
                 pos += VariableByte.compressedLengthOfLength(table[i]) + table[i].length;
             }
             return content;
-        } else throw new IllegalArgumentException();
+        } else {
+            throw new IllegalArgumentException("can't serialize: can't create byte array with " + sizeInBytes + " elements");
+        }
     }
 
     public void read(String filename) throws IOException {

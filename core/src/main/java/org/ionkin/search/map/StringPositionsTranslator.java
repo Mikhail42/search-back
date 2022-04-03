@@ -8,10 +8,10 @@ import java.util.Arrays;
 public class StringPositionsTranslator extends StringTranslator<IntBytesMap> {
     @Override
     public byte[] serialize(LightString key, IntBytesMap value) {
-        byte[] ar2 = value.fastSerialization();
-        ByteArray buf = new ByteArray(1 + key.length() + ar2.length);
+        byte[] serializedValue = value.fastSerialization();
+        ByteArray buf = new ByteArray(1 + key.length() + serializedValue.length);
         buf.add(key);
-        buf.add(ar2);
+        buf.add(serializedValue);
         return buf.getAll();
     }
 
