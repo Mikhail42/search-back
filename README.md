@@ -3,13 +3,14 @@ This search libraries allow to create a search server for Russian Wikipedia.
 For use GUI to search, see [this project](https://github.com/Mikhail42/search-front).
 
 ## Global pre-requirement
-- at least 12 GB free on disk
-- at least 6 GB RAM. 8 GB is good enough
+- at least 12 GB free on disk. You need it to store wiki dump, parsed wiki dump and indexes.
+- at least 6 GB RAM. 8 GB is good enough. Free RAM should be about size of bz2 file.
+  You need it to create and store index (bz2 is 6x times compressed in our case)
 - internet to download wikipedia dump
 - python 3
 - *nix OS preferred (see wikiextractor)
 - java 11, mvn, sbt
-- understanding console applications
+- understanding console applications: you need to perform some of command in terminal
 - Intellij Idea Community Edition (optional)
 
 ## How to use
@@ -24,17 +25,21 @@ and add the option before main class.
    In new version you also can use `xml-parser` module for that purpose, but it will be easy to use Wiki Extractor.
    `cd $basePath && python -m wikiextractor.WikiExtractor ruwiki-20211201-pages-articles-multistream.xml.bz2`
    It will take ~20 minutes. After that check `$basePath/text` directory.
+   After that you can delete `.xml.bz2` file, if you want so.
 3. Run [Tokenizer](index/src/main/java/org/ionkin/search/Tokenizer.java).
-   After that there are 2 files in a `$basePath`: firstDocidFilenameMap.csv & tokens.chsls.
-   firstDocidFilenameMap contains map of (first doc id in file -> fileName),
-   tokens contains all normalized unique words (both russian and english) from wikipedia.
+   It may take ~20 minutes. After that there are 3 files in a `$basePath`:
+   - firstDocidFilenameMap.csv -- map of (first doc id in file -> fileName)
+   - tokens.chsls -- set of all normalized words (both russian and english) from wikipedia
+   - docPositions.chmiiiFast -- map of (pageId -> (start position, length))
 4. Run [Indexer](index/src/main/java/org/ionkin/search/Indexer.java) to create inverse index.
-   It may take a few minutes. See logs to trace progress.
+   It may take ~20 minutes. See logs to trace progress.
    After than index.chmsb should be created. This file contains map of (token -> list of pageId) in compact form.
+   You can delete index directory if you want so.
 5. Run [PositionsIndex](index/src/main/java/org/ionkin/search/PositionsIndex.java) to create inverse index with word positions.
-   It may take about hour. See logs to trace progress.
+   It may take about 2 hours. See logs to trace progress.
    After than positions.chmsp should be created.
    This file contains map of (token -> (map of pageId → word positions on page)) in compact form.
+   You can delete posindex directory and generated *MainN files if you want so.
 6. Run [EvaluatorPerformance](boolparser/src/main/java/org/ionkin/search/EvaluatorPerformance.java)
    to create docids.chsi (set of doc id) and positions.sm (search map).
 7. Execute `mvn clean install -DskipTests=true` in project directory in command line.
@@ -54,11 +59,7 @@ you can run [script](clean-generated-files.sh).
   chmss -- map of string -> string, chmsb -- map of string -> bytes.
 - CHS -- [CompactHashSet](core/src/main/java/org/ionkin/search/set/CompactHashSet.java).
 - CSV -- comma separated values. Text file format for tables
-
-## Pre-requirement
-- RAM about size of bz2 file. You need it to create and store index (bz2 is 6x times compressed in our case).
-- Java 11
-- To start GUI you need to have sbt or Intellij Idea with Scala plugin, but you can make build for Java 11.
+- SMP -- string-position map. Map of (token -> (pageId -> positions))
 
 ## Modules
 
