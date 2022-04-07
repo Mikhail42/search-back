@@ -2,7 +2,9 @@ package org.ionkin.search;
 
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -21,8 +23,10 @@ public class TextArticleIteratorTest {
     @Test
     public void readFirstDocidFilenameMap() throws Exception {
         Map<Integer, String> map = TextArticleIterator.readFirstDocidFilenameMap();
-        assertTrue(map.size() > 1000); // wikiextractor generate a few thousand files for Russian Wikipedia
-        assertTrue(map.size() < 100_000); // a few thousands, not a million
+        File textPath = new File(Util.textPath);
+        int dirs = (int)Arrays.stream(textPath.listFiles()).filter(File::isDirectory).count();
+        assertTrue(dirs > 0);
+        assertEquals(dirs * 100, map.size()); // wikiextractor generate 100 files per dir (maybe expect last dir)
         assertEquals(map.get(4), "AA/wiki_00"); // first id in Russian Wikipedia is 4
     }
 

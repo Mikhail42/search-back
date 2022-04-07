@@ -3,11 +3,20 @@ package org.ionkin.search;
 import org.ionkin.search.map.IntBytesMap;
 import org.ionkin.search.map.StringPositionsMap;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
 
 public class PositionsIndexTest {
+
+    @Before
+    public void before() {
+        if (!new File(Util.positionsPath).exists()) {
+            PositionsIndex.init();
+        }
+    }
 
     @Test
     public void checkPositionIndexTest() throws IOException {

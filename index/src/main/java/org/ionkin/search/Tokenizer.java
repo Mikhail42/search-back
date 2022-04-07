@@ -6,24 +6,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.regex.Pattern;
 
 public class Tokenizer {
     private static final Logger logger = LoggerFactory.getLogger(Tokenizer.class);
 
-    public static void main(String... args) throws Exception {
+    public static void main(String... args) throws IOException {
         init();
     }
 
-    public static void init() throws Exception {
+    public static void init() throws IOException {
         TextArticleIterator.init();
         if (!new File(Util.tokensPath).exists()) {
             writeTokens();
         }
     }
 
-    public static void writeTokens() throws Exception {
+    public static void writeTokens() throws IOException {
         logger.info("start get tokens");
         CompactHashSet<LightString> tokens = new CompactHashSet<>(new StringTranslator());
 

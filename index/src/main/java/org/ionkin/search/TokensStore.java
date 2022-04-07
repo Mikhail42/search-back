@@ -5,6 +5,7 @@ import org.ionkin.search.set.StringTranslator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 
 public class TokensStore {
@@ -14,6 +15,9 @@ public class TokensStore {
 
     private TokensStore() throws IOException {
         logger.debug("try read tokens");
+        if (!new File(Util.tokensPath).exists()) {
+            Tokenizer.init();
+        }
         CompactHashSet<LightString> tokensMap = CompactHashSet.read(Util.tokensPath, new StringTranslator());
         tokens = Util.toArray(tokensMap);
         tokensMap = null;
