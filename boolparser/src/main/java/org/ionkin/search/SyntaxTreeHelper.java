@@ -2,7 +2,6 @@ package org.ionkin.search;
 
 import org.ionkin.search.map.IndexMap;
 import org.ionkin.search.map.SearchMap;
-import org.ionkin.search.map.StringStringMap;
 import org.scijava.parse.ExpressionParser;
 import org.scijava.parse.SyntaxTree;
 import org.scijava.parse.Tokens;
@@ -24,7 +23,6 @@ public class SyntaxTreeHelper {
     private static final Logger logger = LoggerFactory.getLogger(SyntaxTreeHelper.class);
 
     private static final String closeBrace = "]\\)}\"";
-    private static final String wordSymbol = Util.ruEnLowerSymbol;
 
     static SyntaxTree create(String normalized) {
         normalized = replaceSpaceOnAnd(normalized);
@@ -33,7 +31,7 @@ public class SyntaxTreeHelper {
     }
 
     static String replaceSpaceOnAnd(String s) {
-        Pattern p = Pattern.compile("([" + closeBrace + wordSymbol + "]) ([^&|])");
+        Pattern p = Pattern.compile("([" + closeBrace + Util.searchableSymbols + "]) ([^&|])");
         Matcher m = p.matcher(s);
         while (m.find()) {
             s = m.replaceAll("$1 && $2");

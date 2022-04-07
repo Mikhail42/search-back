@@ -1,6 +1,7 @@
 package org.ionkin.search;
 
 import com.google.common.base.Splitter;
+import org.ionkin.search.config.AppConfig;
 
 import java.io.File;
 import java.util.*;
@@ -8,7 +9,7 @@ import java.util.regex.Pattern;
 
 public class Util {
     public static final int threadPoolSize = 4;
-    public static final String basePath = System.getProperty("user.home") + "/workspace/wiki-bz2/";
+    public static final String basePath = AppConfig.basePath;
     public static String textPath = basePath + "text/"; // dir with wikiextractor files
     public static final String indexFolder = basePath + "index/"; // dir with inverse index temp files
     public static final String positionIndexFolder = basePath + "posindex/"; // dir with inverse index with positions temp files
@@ -24,14 +25,14 @@ public class Util {
     public static final String firstDocidFilenamePath = basePath + "firstDocidFilenameMap.csv"; // map of (docid -> filename) for first docs in files
     public static final String docIdsPath = basePath + "docids.chsi"; // set of page ids
 
-    public static final String wordSymbol = "\\p{L}\\p{N}\u0301";
-    public static final String ruEnLowerSymbol = "a-zа-я0-9";
-    public static final Splitter splitPatternLazy = Splitter.onPattern("[^" + wordSymbol + "]+");
-    public static final Pattern splitPattern = Pattern.compile("[^" + wordSymbol + "]+");
-    public static final Pattern wordPattern = Pattern.compile("[" + wordSymbol + "]+");
-    public static Pattern searchablePatter = Pattern.compile("[" + ruEnLowerSymbol + "]+");
+    public static final String wordSymbols = AppConfig.wordSymbols;
+    public static final String searchableSymbols = AppConfig.searchableSymbols;
+    public static final Splitter splitPatternLazy = Splitter.onPattern("[^" + wordSymbols + "]+");
+    public static final Pattern splitPattern = Pattern.compile("[^" + wordSymbols + "]+");
+    public static final Pattern wordPattern = Pattern.compile("[" + wordSymbols + "]+");
+    public static final Pattern searchablePatter = Pattern.compile("[" + searchableSymbols + "]+");
 
-    public static final Locale RU = new Locale("RU");
+    public static final Locale locale = new Locale(AppConfig.locale);
 
     public static final File[] textDirs() {
         return Arrays.stream(new File(textPath).listFiles())
@@ -52,9 +53,9 @@ public class Util {
     }
 
     public static String normalize(String s) {
-        return s.toLowerCase(RU)
+        return s.toLowerCase(locale)
                 .replace('ё', 'е')
-                .replace("\u0301", "");
+                .replace("\u0301", ""); // stress symbol
     }
 
     public static int hashCode(byte[] bytes) {

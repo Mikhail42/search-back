@@ -1,7 +1,6 @@
 package org.ionkin.search;
 
 import org.ionkin.Ranking;
-import org.ionkin.search.map.StringStringMap;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -85,7 +84,7 @@ public class Snippet {
         for (String snipWord : snipWords) {
             LightString norm1 = new LightString(Util.normalize(snipWord));
             if (wordsAsSet.contains(norm1)) {
-                Pattern pat = Pattern.compile("([^" + Util.wordSymbol + "])" + snipWord + "([^" + Util.wordSymbol + "])");
+                Pattern pat = Pattern.compile("([^" + Util.wordSymbols + "])" + snipWord + "([^" + Util.wordSymbols + "])");
                 Matcher m = pat.matcher(snip);
                 if (m.find()) {
                     snip = m.replaceAll("$1<b>" + snipWord + "</b>$2");
