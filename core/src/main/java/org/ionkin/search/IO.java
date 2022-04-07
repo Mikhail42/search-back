@@ -24,25 +24,25 @@ public class IO {
     }
 
     public static byte[] read(String fileName, int skip, int length) throws IOException {
-        logger.debug("read from '{}'. length = {}", fileName, length);
         try (FileChannel readChannel = new RandomAccessFile(fileName, "r").getChannel()) {
-            ByteBuffer wrBuf = readChannel.map(FileChannel.MapMode.READ_ONLY, skip, length);
-            byte[] fileContent = new byte[length];
-            wrBuf = wrBuf.asReadOnlyBuffer().get(fileContent);
-            logger.debug("read successfully");
-            return fileContent;
+            return read(fileName, readChannel, skip, length);
         }
     }
 
     public static byte[] read(String fileName) throws IOException {
         try (FileChannel readChannel = new RandomAccessFile(fileName, "r").getChannel()) {
             logger.debug("read from '{}'. size = {}", fileName, readChannel.size());
-            ByteBuffer wrBuf = readChannel.map(FileChannel.MapMode.READ_ONLY, 0, readChannel.size());
-            byte[] fileContent = new byte[(int) readChannel.size()];
-            wrBuf = wrBuf.asReadOnlyBuffer().get(fileContent);
-            logger.debug("read successfully");
-            return fileContent;
+            return read(fileName, readChannel, 0, (int) readChannel.size());
         }
+    }
+
+    private static byte[] read(String fileName, FileChannel readChannel, int skip, int length) throws IOException {
+        logger.debug("read from '{}', length={}, skip={}", fileName, length, skip);
+        ByteBuffer wrBuf = readChannel.map(FileChannel.MapMode.READ_ONLY, skip, length);
+        byte[] fileContent = new byte[length];
+        wrBuf = wrBuf.asReadOnlyBuffer().get(fileContent);
+        logger.debug("read successfully");
+        return fileContent;
     }
 
     public static byte[] toBytes(IntsRange range) {

@@ -23,6 +23,7 @@ package org.ionkin.search.set;
  *   Software.
  */
 
+import org.ionkin.search.IO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,15 +76,9 @@ public final class CompactHashSet<E> extends AbstractSet<E> implements Serializa
     /**
      * @author M. Ionkin
      */
-    public static <K>CompactHashSet<K> read(String filename, CompactSetTranslator<K> trans)
-            throws IOException {
-        try (final FileChannel readChannel = new RandomAccessFile(filename, "r").getChannel()) {
-            final long fileLength0 = readChannel.size();
-            final ByteBuffer readBuffer = readChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileLength0);
-            final byte[] content = new byte[(int) fileLength0];
-            readBuffer.asReadOnlyBuffer().get(content);
-            return read(content, trans);
-        }
+    public static <K>CompactHashSet<K> read(String filename, CompactSetTranslator<K> trans) throws IOException {
+        byte[] content = IO.read(filename);
+        return read(content, trans);
     }
 
     private static <K>CompactHashSet<K> read(byte[] content, CompactSetTranslator<K> trans) {

@@ -9,9 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -173,13 +171,6 @@ public class Parser {
     }
 
     public static String read(String filename) throws IOException {
-        try (final FileChannel readChannel = new RandomAccessFile(filename, "r").getChannel()) {
-            final long fileLength = readChannel.size();
-            logger.info("read from {}. fileLength={}", filename, fileLength);
-            final ByteBuffer readBuffer = readChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileLength);
-            byte[] content = new byte[(int) fileLength];
-            readBuffer.get(content);
-            return new String(content, "UTF-8");
-        }
+        return new String(IO.read(filename), StandardCharsets.UTF_8);
     }
 }
