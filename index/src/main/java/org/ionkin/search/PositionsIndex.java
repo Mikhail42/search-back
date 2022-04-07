@@ -46,14 +46,18 @@ public class PositionsIndex {
 
     private static void joinAll() throws Exception {
         logger.info("Start read maps to join position indexes");
-        String postfix = "MainN";
-        StringPositionsMap map1 = new StringPositionsMap(Util.basePath + "AA.spm" + postfix);
-        StringPositionsMap map2 = new StringPositionsMap(Util.basePath + "AZ.spm" + postfix);
-        StringPositionsMap map3 = new StringPositionsMap(Util.basePath + "BY.spm" + postfix);
+        String postfix = ".spmMainN";
+        File basePath = new File(Util.basePath);
+        String[] mainPositionIndexFiles =
+                Arrays.stream(basePath.list()).filter(f -> f.endsWith(postfix)).toArray(String[]::new);
+        Arrays.sort(mainPositionIndexFiles);
+        StringPositionsMap map1 = new StringPositionsMap(Util.basePath + mainPositionIndexFiles[0]);
         System.gc();
         logger.info("Start join all position indexes");
-        join2(map1, map2);
-        join2(map1, map3);
+        for (int i=1; i<mainPositionIndexFiles.length; i++) {
+            StringPositionsMap map2 = new StringPositionsMap(Util.basePath + mainPositionIndexFiles[i]);
+            join2(map1, map2);
+        }
         logger.info("try write final result");
         map1.write(Util.positionsPath);
     }
