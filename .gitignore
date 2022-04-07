@@ -4,4 +4,8 @@
 logs
 *.log
 target
+# heap dump files
+javacore*.txt
+Snap*.trc
+heapdump*.phd
 
