@@ -13,9 +13,12 @@ public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     public static void main(String... args) throws Exception {
+        // you need to use something like TextArticleIterator and
+        // create file with token frequency
+        // then you can use that file to show (logarithmic) graph of word frequency
         CompactHashMap<LightString, Integer> tokens = new CompactHashMap<>(new StringIntTranslator());
         tokens.read(Util.basePath + "freq/allTokens");
-        logger.debug("file is readed");
+        logger.debug("file was read");
         Collection<Integer> values = tokens.values();
         tokens = null;
         logger.debug("values is getted");
