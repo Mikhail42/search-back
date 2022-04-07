@@ -9,15 +9,16 @@
     <packaging>pom</packaging>
     <version>1.3-SNAPSHOT</version>
     <modules>
-        <module>index</module>
         <module>core</module>
-        <module>boolparser</module>
-        <module>parsington</module>
+        <module>index</module>
+        <module>xml-parser</module>
         <module>lemmatization</module>
+        <module>parsington</module>
+        <module>boolparser</module>
         <module>ranking</module>
         <module>snippet</module>
         <module>collocation</module>
-        <module>xml-parser</module>
+        <module>graph</module>
     </modules>
 
     <properties>
