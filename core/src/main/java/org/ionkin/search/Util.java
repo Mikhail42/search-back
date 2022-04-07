@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 public class Util {
     public static final int threadPoolSize = 4;
     public static final String basePath = AppConfig.basePath;
-    public static String textPath = basePath + "text/"; // dir with wikiextractor files
+    public static final String textPath = basePath + "text/"; // dir with wikiextractor files
     public static final String indexFolder = basePath + "index/"; // dir with inverse index temp files
     public static final String positionIndexFolder = basePath + "posindex/"; // dir with inverse index with positions temp files
     public static final String indexPath = basePath + "index.chmsb"; // inverse index
@@ -34,7 +34,7 @@ public class Util {
 
     public static final Locale locale = new Locale(AppConfig.locale);
 
-    public static final File[] textDirs() {
+    public static File[] textDirs() {
         return Arrays.stream(new File(textPath).listFiles())
                 .filter(f -> f.isDirectory() && f.getName().length() == 2)
                 .sorted(Comparator.comparing(File::getName)).toArray(File[]::new);
@@ -60,8 +60,8 @@ public class Util {
 
     public static int hashCode(byte[] bytes) {
         int state = 0;
-        for (int i = 0; i < bytes.length; i++) {
-            state += bytes[i];
+        for (byte aByte : bytes) {
+            state += aByte;
             for (int j = 0; j < 4; j++) {
                 state *= 0x7C824F73;
                 state ^= 0x5C12FE83;

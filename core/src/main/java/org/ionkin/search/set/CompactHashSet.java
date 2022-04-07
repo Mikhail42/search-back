@@ -43,7 +43,7 @@ import java.util.NoSuchElementException;
  */
 public final class CompactHashSet<E> extends AbstractSet<E> implements Serializable {
     private static final long serialVersionUID = 2285812214679679865L;
-    private static Logger logger = LoggerFactory.getLogger(CompactHashSet.class);
+    private static final Logger logger = LoggerFactory.getLogger(CompactHashSet.class);
 
     /*---- Fields ----*/
 
@@ -63,10 +63,10 @@ public final class CompactHashSet<E> extends AbstractSet<E> implements Serializa
         long size = sizeOfBytesWithLength();
         try (FileChannel rwChannel = new RandomAccessFile(filename, "rw").getChannel()) {
             ByteBuffer wrBuf = rwChannel.map(FileChannel.MapMode.READ_WRITE, 0, size);
-            for (int i = 0; i < table.length; i++) {
-                if (table[i] != null) {
-                    wrBuf.put((byte) (table[i].length & 0x7F));
-                    wrBuf.put(table[i]);
+            for (byte[] bytes : table) {
+                if (bytes != null) {
+                    wrBuf.put((byte) (bytes.length & 0x7F));
+                    wrBuf.put(bytes);
                 }
             }
         }

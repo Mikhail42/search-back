@@ -31,8 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.*;
 
 /**
@@ -83,9 +81,9 @@ public class CompactHashMap<K, V> extends AbstractMap<K, V> implements Serializa
      */
     public long sizeOfTableWithLength() {
         long size = 0;
-        for (int i = 0; i < table.length; i++) {
-            if (table[i] != null) {
-                size += table[i].length + VariableByte.compressedLength(table[i].length);
+        for (byte[] bytes : table) {
+            if (bytes != null) {
+                size += bytes.length + VariableByte.compressedLength(bytes.length);
             }
         }
         return size;

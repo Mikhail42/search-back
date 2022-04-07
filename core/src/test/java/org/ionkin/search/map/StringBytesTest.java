@@ -41,7 +41,7 @@ public class StringBytesTest {
      * @author M. Ionkin
      */
     @Test
-    public void testSer() throws IOException {
+    public void testSer() {
         StringBytesMap map = new StringBytesMap();
         BytesRange ar1 = new BytesRange(new byte[]{1, 5, 9, 3, 2});
         map.put(new LightString("мама"), ar1);
@@ -76,7 +76,7 @@ public class StringBytesTest {
      * @author M. Ionkin
      */
     @Test
-    public void joinStringBytes() throws Exception {
+    public void joinStringBytes() {
         LightString word = new LightString("word");
         LightString mir = new LightString("mir");
         StringBytesMap ib1 = new StringBytesMap();

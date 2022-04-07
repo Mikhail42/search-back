@@ -4,14 +4,11 @@ import org.ionkin.search.BytesRange;
 import org.ionkin.search.LightString;
 import org.junit.Test;
 
-import java.util.Arrays;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class StringBytesTranslatorTest {
 
-    StringBytesTranslator translator = new StringBytesTranslator();
+    private final StringBytesTranslator translator = new StringBytesTranslator();
 
     @Test
     public void testBothSerialize() {
@@ -20,6 +17,6 @@ public class StringBytesTranslatorTest {
         LightString key = translator.deserializeKey(ar);
         BytesRange value = translator.deserializeValue(ar);
         assertEquals(key, key0);
-        assertTrue(Arrays.equals(value.getCopy(), new byte[] {1, 5, 9, 3, 2}));
+        assertArrayEquals(value.getCopy(), new byte[]{1, 5, 9, 3, 2});
     }
 }

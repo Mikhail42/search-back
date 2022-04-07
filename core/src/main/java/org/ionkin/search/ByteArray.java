@@ -58,27 +58,6 @@ public class ByteArray {
         pos += range.length();
     }
 
-    public void add(byte[]... mat) {
-        int addLength = 0;
-        for (int i = 0; i < mat.length; i++) {
-            addLength += mat[i].length;
-        }
-        if (addLength <= bytes.length - pos) {
-            for (int i = 0; i < mat.length; i++) {
-                System.arraycopy(mat[i], 0, bytes, pos, mat[i].length);
-                pos += mat[i].length;
-            }
-        } else {
-            byte[] newAr = new byte[pos + addLength];
-            System.arraycopy(bytes, 0, newAr, 0, pos);
-            for (int i = 0; i < mat.length; i++) {
-                System.arraycopy(mat[i], 0, bytes, pos, mat[i].length);
-                pos += mat[i].length;
-            }
-            bytes = newAr;
-        }
-    }
-
     private void resize() {
         resize(pos * 2);
     }
@@ -95,10 +74,6 @@ public class ByteArray {
 
     public byte[] getAll() {
         return bytes;
-    }
-
-    public byte get(int i) {
-        return bytes[i];
     }
 
     public int size() {

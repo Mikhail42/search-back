@@ -40,8 +40,8 @@ public class VariableByte {
             size += compressedLength(i);
         }
         ByteArray res = new ByteArray(size);
-        for (int k = 0; k < in.length; ++k) {
-            addCompressed(res, in[k]);
+        for (int elem : in) {
+            addCompressed(res, elem);
         }
         return res.getAll();
     }

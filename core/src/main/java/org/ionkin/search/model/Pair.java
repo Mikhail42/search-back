@@ -3,8 +3,8 @@ package org.ionkin.search.model;
 import java.util.Objects;
 
 public class Pair<F, S> {
-    public F key;
-    public S value;
+    public final F key;
+    public final S value;
 
     public Pair(F first, S second) {
         this.key = first;

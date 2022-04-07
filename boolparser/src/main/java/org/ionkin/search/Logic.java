@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Logic {
 
-    private static int TITLE_WEIGHT = 5;
+    private static final int TITLE_WEIGHT = 5;
 
     static int[] or(int[] ar1, int[] ar2, int count) {
         List<Integer> list = new ArrayList<>();

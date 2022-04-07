@@ -2,11 +2,7 @@ package org.ionkin.search;
 
 import org.junit.Test;
 
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertTrue;
 
 public class CompressorTest {
 
@@ -16,7 +12,7 @@ public class CompressorTest {
         byte[] compVb = Compressor.compressVbWithoutMemory(ar);
         Compressor.sum(ar);
         int[] decompVb = Compressor.decompressVb(compVb);
-        assertTrue(Arrays.equals(ar, decompVb));
+        assertArrayEquals(ar, decompVb);
 
         /*int[] compS9 = Compressor.compressVbWithoutMemory(ar);
         ByteBuffer buf = ByteBuffer.allocate(compS9.length * 4);
@@ -46,6 +42,6 @@ public class CompressorTest {
         byte[] comp = Compressor.compressVbWithoutMemory(ar);
         Compressor.sum(ar);
         int[] decomp = Compressor.decompressVb(comp);
-        assertTrue(Arrays.equals(ar, decomp));
+        assertArrayEquals(ar, decomp);
     }
 }

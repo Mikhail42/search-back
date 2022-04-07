@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Main {
-    private static Logger logger = LoggerFactory.getLogger(Main.class);
+    private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     public static final String testIndexPath = Util.basePath + "testIndex.chmsb"; // test inverse index for fast check
     public static final String testPositionsPath = Util.basePath + "testPositions.chmsp";
@@ -96,7 +96,7 @@ public class Main {
                 new P("административный кодекс", 0)
         };
 
-        String[] qs = Arrays.stream(ps).map(P::getQuery).collect(Collectors.toList()).toArray(new String[0]);
+        String[] qs = Arrays.stream(ps).map(P::getQuery).toArray(String[]::new);
         csv(qs, EvaluatorPerformance.load(), 10);
     }
 
@@ -134,7 +134,7 @@ public class Main {
         csv(qs, EvaluatorPerformance.load(), 10);
     }
 
-    private static void csv(String[] qs, EvaluatorPerformance evaluator, int count) throws Exception {
+    private static void csv(String[] qs, EvaluatorPerformance evaluator, int count) {
         Pattern p = Pattern.compile("\\d+ (.*)");
         for (int i = 0; i < qs.length; i++) {
             Matcher m = p.matcher(qs[i]);
@@ -143,7 +143,7 @@ public class Main {
             }
         }
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         for (String q : qs) {
             try {
