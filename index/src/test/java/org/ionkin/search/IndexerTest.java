@@ -12,6 +12,7 @@ public class IndexerTest {
 
     @Before
     public void before() {
+        TextArticleIterator.init();
         Indexer.init();
     }
 
@@ -29,7 +30,8 @@ public class IndexerTest {
         int[] subPageIds = Arrays.copyOf(pageIds, partOfExpectedIds.length);
         Assert.assertArrayEquals(partOfExpectedIds, subPageIds);
 
-        Assert.assertTrue(TextArticleIterator.readPage(pageIds[23]).getContent().contains("слон"));
+        Page pageN2846 = TextArticleIterator.readPage(2846); // 2846 from $partOfExpectedIds
+        Assert.assertTrue(pageN2846.getContent().contains("слон"));
     }
 
     @Test
