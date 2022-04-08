@@ -1,9 +1,8 @@
 package org.ionkin.search;
 
 import com.google.common.primitives.Ints;
-import org.ionkin.search.map.*;
-import org.ionkin.search.set.CompactHashSet;
-import org.ionkin.search.set.StringTranslator;
+import org.ionkin.search.map.IntBytesMap;
+import org.ionkin.search.map.StringPositionsMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

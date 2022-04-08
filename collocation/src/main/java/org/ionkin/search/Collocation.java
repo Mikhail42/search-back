@@ -7,11 +7,13 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static org.ionkin.search.Statistic.sqr;
 
 public class Collocation {
+    private static final Logger logger = LoggerFactory.getLogger(Collocation.class);
 
     public static void main(String... args) throws IOException {
         Collocation col = new Collocation();
@@ -29,11 +31,9 @@ public class Collocation {
             sb.append("\n");
         });
         FileOutputStream out = new FileOutputStream(files[0]); // TODO
-        out.write(sb.toString().getBytes("UTF-8"));
+        out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
         out.close();
     }
-
-    private static final Logger logger = LoggerFactory.getLogger(Collocation.class);
 
     private final StringStringMap lemms;
 

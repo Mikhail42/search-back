@@ -8,15 +8,15 @@ import org.ionkin.search.map.StringStringMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Main {
-    private static Logger logger = LoggerFactory.getLogger(Main.class);
+    private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-    private static String modelPath = Util.basePath + "russian.par";
-    private static String encoding = "utf-8";
+    private static final String modelPath = Util.basePath + "russian.par";
+    private static final String encoding = "utf-8";
 
+    // https://nlpub.ru/TreeTagger
     public static void main(String... args) throws Exception {
         lemmPositions();
         //StringBytesMap sbm = new StringBytesMap(Util.indexPath);

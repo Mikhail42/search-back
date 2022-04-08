@@ -15,16 +15,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Parser {
-    private static Logger logger = LoggerFactory.getLogger(Main.class);
+    private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     // № any       init     type  ??  info                                           ??  ??           ? ?
     // 85 балтского	балтский ADJ	_   Case=Gen|Degree=Pos|Gender=Masc|Number=Sing	86	amod	      _	_
     // 86 xcgpu	    xcgpu	 X   	_   Foreign=Yes	                                   84	flat:foreign  _	_
 
     // select (any, init, info) from rows where russian start with digit
-    private static Pattern russian =
+    private static final Pattern russian =
             Pattern.compile("\\d+\\s(.*)\\s(.*)\\s+(NOUN|VERB|ADJ|PUNCT|PRON|ADV|NUM|X)\\s(.*)\\s+.*");
-    private static Pattern english =
+    private static final Pattern english =
             Pattern.compile("\\d+\\s(.*)\\s(.*)\\s+(NOUN|VERB|ADJ|PUNCT|PRON|ADV|NUM|X)\\s.*");
 
     public static void main(String... args) throws Exception {
