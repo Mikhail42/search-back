@@ -99,10 +99,14 @@ This module allows to create a word's frequency graph.
 **Pre-requirement:**
 
 ### lemmatization
-Create [lemmas](https://en.wikipedia.org/wiki/Lemma_(morphology)) from words.
+[Create lemmas](https://en.wikipedia.org/wiki/Lemmatisation) from words.
 For example, word "модули" converts to "модул" (word "модуль" probably is better variant).
-English example: word "lemmas" converts to "lemma". So, lemmatisation allow you to type "lemmas" and find articles with
+English example: word "lemmas" converts to "lemma". So, lemmatization allow you to type "lemmas" and find articles with
 word "lemma", and reverse, find acrticles with "lemmas" by "lemma".
+
+Class [Porter.java](lemmatization/src/main/java/org/ionkin/search/Porter.java) related to [Standford Lemmatization Algorithm](https://nlp.stanford.edu/IR-book/html/htmledition/stemming-and-lemmatization-1.html)
+
+Class [Main](lemmatization/src/main/java/org/ionkin/search/Main.java) related to [TreeTagger](https://nlpub.ru/TreeTagger) -- a language-independent morphological text markup tool.
 
 ### parsington
 It is expression parser library. Allow to parse words syntax tree by search expression, where word are leaf, operations

@@ -3,6 +3,7 @@ package org.ionkin.search;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+// https://nlp.stanford.edu/IR-book/html/htmledition/stemming-and-lemmatization-1.html
 public class Porter {
     private static final Pattern PERFECTIVEGROUND = Pattern.compile("((ив|ивши|ившись|ыв|ывши|ывшись)|((?<=[ая])(в|вши|вшись)))$");
     private static final Pattern REFLEXIVE = Pattern.compile("(с[яь])$");
