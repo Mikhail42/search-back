@@ -112,6 +112,10 @@ Class [Main](lemmatization/src/main/java/org/ionkin/search/Main.java) related to
 It is expression parser library. Allow to parse words syntax tree by search expression, where word are leaf, operations
 like "or", "and" are links, and subtree means "braces".
 
+Based on [scijava/parsington](https://github.com/scijava/parsington),
+but I have different implementation of SyntaxTree parser due to the fact that user will not use strange quotes like «such»
+(but he may use simple quotes like "such").
+
 **Pre-requirement:** none, because it is set of pure functions and classes.
 
 ### boolparser
