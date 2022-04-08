@@ -2,8 +2,6 @@ package org.ionkin.search;
 
 import com.google.common.primitives.Ints;
 import org.ionkin.search.map.StringBytesMap;
-import org.ionkin.search.set.CompactHashSet;
-import org.ionkin.search.set.StringTranslator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,24 +97,11 @@ public class Indexer {
             WikiParser wikiParser = new WikiParser(wikiexractorSubDir.getAbsolutePath() + "/" + file);
             wikiParser.getPages().forEach(page -> {
                 logger.trace("docId={}", page.getId());
-                Set<LightString> pageWords = extractWords(getContent.apply(page));
+                Set<LightString> pageWords = Util.uniqueWords(getContent.apply(page));
                 addWords(wordToPageIds, pageWords, page.getId());
             });
         }
         return compressMap(wordToPageIds);
-    }
-
-    private static Set<LightString> extractWords(String pageContent) {
-        Iterable<String> words = Util.splitPatternLazy.split(pageContent);
-        CompactHashSet<LightString> pageWords = new CompactHashSet<>(new StringTranslator());
-        words.forEach(word -> {
-            String normalWord = Util.normalize(word);
-            // it is not good for title index, but without it it will be not so easy to create
-            if (Util.searchable(normalWord)) {
-                pageWords.add(new LightString(normalWord));
-            }
-        });
-        return pageWords;
     }
 
     private static void addWords(Map<LightString, List<Integer>> wordToPageIds, Set<LightString> pageWords, int pageId) {

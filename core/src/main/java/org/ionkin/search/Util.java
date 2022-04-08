@@ -42,7 +42,7 @@ public class Util {
                 .sorted(Comparator.comparing(File::getName)).toArray(File[]::new);
     }
 
-    public static Set<LightString> lightStrings(String pageContent) {
+    public static Set<LightString> uniqueWords(String pageContent) {
         Iterable<String> words = splitPatternLazy.split(pageContent);
         Set<LightString> lightStrings = new HashSet<>();
         for (String word : words) {
