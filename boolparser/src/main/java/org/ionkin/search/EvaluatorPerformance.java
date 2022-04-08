@@ -33,17 +33,6 @@ public class EvaluatorPerformance {
         load();
     }
 
-    public static EvaluatorPerformance loadTestTest() throws IOException {
-        byte[] docsAsBytes = IO.read(Util.docIdsPath);
-        int[] allIds = Compressor.decompressVb(docsAsBytes);
-
-        IndexMap indexMap = new IndexMap(new StringBytesMap(Util.basePath + "test.index"));
-        IndexMap titleIndexMap = new IndexMap(new StringBytesMap(Util.basePath + "testTitle.index"));
-        SearchMap searchMap = new SearchMap(new StringPositionsMap(Util.basePath + "test.posit"));
-
-        return new EvaluatorPerformance(searchMap, indexMap, titleIndexMap, allIds);
-    }
-
     public static void writeDocIds() throws IOException {
         CompactHashSet<Integer> chsi = new CompactHashSet<>(new IntTranslator());
         StringBytesMap sbm = new StringBytesMap(Util.titleIndexPath);
