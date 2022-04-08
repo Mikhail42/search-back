@@ -60,7 +60,7 @@ public class Main {
     private static void csvTest() throws Exception {
         String[] qs = ("31 Выход Великобритании из Европейского союза\n" +
                 "30 сколько ждал хатико").split("\n");
-        EvaluatorPerformance eval = EvaluatorPerformance.loadTestTest();
+        EvaluatorPerformance eval = EvaluatorPerformance.load();
         csv(qs, eval, 15);
     }
 

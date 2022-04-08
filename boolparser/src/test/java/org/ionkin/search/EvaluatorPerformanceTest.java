@@ -16,8 +16,9 @@ public class EvaluatorPerformanceTest {
         String query = "\"что  где  когда\"  &&  !\"хрустальная  сова\"";
         SyntaxTree tree = SyntaxTreeHelper.create(Normalizer.normalize(query));
         List<LightString> words = SyntaxTreeHelper.queryWords(tree);
-        List<LightString> ans = Stream.of("что  где  когда".split("\\s+")).map(LightString::new).collect(Collectors.toList());
-        assertArrayEquals(words.toArray(), ans.toArray());
+        LightString[] answers =
+                Stream.of("что  где  когда".split("\\s+")).map(LightString::new).toArray(LightString[]::new);
+        assertArrayEquals(words.toArray(), answers);
     }
 
     @Test
