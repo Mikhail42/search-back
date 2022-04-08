@@ -150,11 +150,11 @@ public class Main {
                 List<Pair<Integer, QueryPage>> res = evaluator.evaluate(q, count);
                 int[] docIds = res.stream().mapToInt(kv -> kv.key).toArray();
                 if (docIds.length > 0) {
-                    sb.append("\"" + q + "\",1,\"https://ru.wikipedia.org/" + res.get(0).value.getTitle()
+                    sb.append("\"" + q + "\",1,\"" + Util.localeWikiUrl + "/" + res.get(0).value.getTitle()
                             + "\",0,\"" + res.get(0).value.getSnippet() + "\"\n");
                 }
                 for (int i = 1; i < docIds.length; i++) {
-                    sb.append("\"\"," + (i + 1) + ",\"https://ru.wikipedia.org/" + res.get(i).value.getTitle()
+                    sb.append("\"\"," + (i + 1) + ",\"" + Util.localeWikiUrl + "/" + res.get(i).value.getTitle()
                             + "\",0,\"" + res.get(i).value.getSnippet() + "\"\n");
                 }
             } catch (Exception e) {

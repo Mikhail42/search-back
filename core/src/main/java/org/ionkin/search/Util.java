@@ -33,6 +33,8 @@ public class Util {
     public static final Pattern searchablePatter = Pattern.compile("[" + searchableSymbols + "]+");
 
     public static final Locale locale = new Locale(AppConfig.locale);
+    public static final String localeWikiUrl =
+            "https://" + AppConfig.locale.toLowerCase() + "wikipedia.org";
 
     public static File[] textDirs() {
         return Arrays.stream(new File(textPath).listFiles())

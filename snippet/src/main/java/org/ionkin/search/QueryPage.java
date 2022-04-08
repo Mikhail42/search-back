@@ -12,7 +12,7 @@ public class QueryPage {
     }
 
     public String link() {
-        return "https://ru.wikipedia.org/wiki?curid=" + docId;
+        return Util.localeWikiUrl + "/wiki?curid=" + docId;
     }
 
     public int getDocId() {

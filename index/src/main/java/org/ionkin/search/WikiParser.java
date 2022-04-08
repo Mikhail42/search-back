@@ -19,7 +19,8 @@ public class WikiParser {
     // Базовая статья
     //</doc>
     private static final String docPatternStr =
-            "<doc id=\"(\\d+)\" url=\"https://ru\\.wikipedia\\.org/wiki\\?curid=\\d+\" title=\"([^\"]+)\">(.*?(?=</doc>))</doc>";
+            "<doc id=\"(\\d+)\" url=\"" + Util.localeWikiUrl + "/wiki\\?curid=\\d+\"" +
+                    " title=\"([^\"]+)\">(.*?(?=</doc>))</doc>";
     private static final Pattern docPattern = Pattern.compile(docPatternStr, Pattern.DOTALL);
 
     private final String fileContent;
@@ -63,7 +64,7 @@ public class WikiParser {
             String text = docMatcher.group(3);
             pages.add(new Page(id, title, text));
 
-            String header = "<doc id=\"" + id + "\" url=\"https://ru.wikipedia.org/wiki?curid=" + id
+            String header = "<doc id=\"" + id + "\" url=\"" + Util.localeWikiUrl + "/wiki?curid=" + id
                     + "\" title=\"" + title + "\">";
             int head = Utf8.encodedLength(header);
             int tail = Utf8.encodedLength("</doc>\n");
