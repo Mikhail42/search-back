@@ -34,23 +34,23 @@ public class EvaluatorPerformance {
     }
 
     public static void writeDocIds() throws IOException {
-        CompactHashSet<Integer> chsi = new CompactHashSet<>(new IntTranslator());
-        StringBytesMap sbm = new StringBytesMap(Util.titleIndexPath);
-        sbm.forEach((k, v) -> {
+        CompactHashSet<Integer> allPageIds = new CompactHashSet<>(new IntTranslator());
+        StringBytesMap titleToPageIds = new StringBytesMap(Util.titleIndexPath);
+        titleToPageIds.forEach((k, v) -> {
             int[] pageIds = Compressor.decompressVb(v);
             for (int pageId : pageIds) {
-                chsi.add(pageId);
+                allPageIds.add(pageId);
             }
         });
-        chsi.write(Util.docIdsPath);
+        allPageIds.write(Util.docIdsPath);
     }
 
     public static EvaluatorPerformance load() throws IOException {
         if (!new File(Util.docIdsPath).exists()) {
             writeDocIds();
         }
-        byte[] docsAsBytes = IO.read(Util.docIdsPath);
-        int[] allIds = Compressor.decompressVb(docsAsBytes);
+        byte[] pageIdsAsBytes = IO.read(Util.docIdsPath);
+        int[] allPageIds = Compressor.decompressVb(pageIdsAsBytes);
 
         IndexMap titleIndex = new IndexMap(new StringBytesMap(Util.titleIndexPath));
         IndexMap indexMap = new IndexMap(new StringBytesMap(Util.indexPath));
@@ -65,14 +65,14 @@ public class EvaluatorPerformance {
             searchMap = new SearchMap(searchMapFile.getAbsolutePath());
         }
 
-        return new EvaluatorPerformance(searchMap, indexMap, titleIndex, allIds);
+        return new EvaluatorPerformance(searchMap, indexMap, titleIndex, allPageIds);
     }
 
-    private EvaluatorPerformance(SearchMap positions, IndexMap indexMap, IndexMap titleIndex, int[] allIds) {
+    private EvaluatorPerformance(SearchMap positions, IndexMap indexMap, IndexMap titleIndex, int[] pageIds) {
         this.indexMap = indexMap;
         this.titleIndex = titleIndex;
         this.positions = positions;
-        syntaxTreeHelper = new SyntaxTreeHelper(positions, indexMap, allIds);
+        this.syntaxTreeHelper = new SyntaxTreeHelper(positions, indexMap, pageIds);
         logger.debug("Evaluator created");
     }
 
