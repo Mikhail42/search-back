@@ -84,12 +84,12 @@ public class Util {
         return a;
     }
 
-    public static int[] mergeSimple(int[][] mat) {
+    public static int[] unionAndSort(int[][] mat) {
         int size = 0;
-        for (int[] m : mat) size += m.length;
-        IntArray ar = new IntArray(size);
-        for (int[] m : mat) ar.add(m);
-        int[] res = ar.getAll();
+        for (int[] ar : mat) size += ar.length;
+        IntArray accBuffer = new IntArray(size);
+        for (int[] ar : mat) accBuffer.add(ar);
+        int[] res = accBuffer.getAll();
         Arrays.sort(res);
         return res;
     }
@@ -103,35 +103,41 @@ public class Util {
         return merge(mat2);
     }
 
-    public static int[] merge(int[][] mat) {
+    public static int[] merge(int[][] matrix) {
         int size = 0;
-        int[] is = new int[mat.length];
-        for (int[] m : mat) size += m.length;
-        IntArray ar = new IntArray(size);
+        for (int[] row : matrix) size += row.length;
+
         int max = 0;
-        for (int[] row : mat) {
+        for (int[] row : matrix) {
             if (row.length > 0 && row[row.length - 1] > max) max = row[row.length - 1];
         }
         int min = 0;
+
+        int[] indexOfMinInRows = new int[matrix.length]; // i'm not sure that this name is correct
+        IntArray accBuffer = new IntArray(size);
         while (min < max) {
             // select next min0
-            for (int k = 0; k < mat.length; k++) {
-                if (is[k] < mat[k].length) {
-                    min = mat[k][is[k]];
+            for (int k = 0; k < matrix.length; k++) {
+                if (indexOfMinInRows[k] < matrix[k].length) {
+                    min = matrix[k][indexOfMinInRows[k]];
                     break;
                 }
             }
             // find min with min0
-            for (int k = 0; k < mat.length; k++) {
-                if (is[k] < mat[k].length && min > mat[k][is[k]]) min = mat[k][is[k]];
+            for (int k = 0; k < matrix.length; k++) {
+                if (indexOfMinInRows[k] < matrix[k].length && min > matrix[k][indexOfMinInRows[k]]) {
+                    min = matrix[k][indexOfMinInRows[k]];
+                }
             }
             // increment index for arrays with min value
-            for (int k = 0; k < mat.length; k++) {
-                if (is[k] < mat[k].length && min == mat[k][is[k]]) is[k]++;
+            for (int k = 0; k < matrix.length; k++) {
+                if (indexOfMinInRows[k] < matrix[k].length && min == matrix[k][indexOfMinInRows[k]]) {
+                    indexOfMinInRows[k]++;
+                }
             }
-            ar.add(min);
+            accBuffer.add(min);
         }
-        return ar.getCopy();
+        return accBuffer.getCopy();
     }
 
     public static int[] merge(int[] a, int[] b) {

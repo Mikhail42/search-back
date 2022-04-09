@@ -17,6 +17,12 @@ public class Snippet {
     private static final int DISTANCE = 20;
     private static final int SNIPPET_LENGTH = AppConfig.snippetLength;
 
+    /**
+     * @param ids doc (wiki page) ids
+     * @param idfs map of (word from query -> idf)
+     * @param wordPositionsMap map of (word from query -> positions)
+     * @return map of (page id -> page title and snippet)
+     **/
     public static Map<Integer, QueryPage> snippets(int[] ids, Map<LightString, Integer> idfs,
                                                    Map<LightString, Positions> wordPositionsMap) throws IOException {
         Map<Integer, QueryPage> res = new HashMap<>();
@@ -35,50 +41,53 @@ public class Snippet {
         return res;
     }
 
-    static String pretty(String snip) {
-        return snip.replaceAll("\\(\\)", "")
+    static String pretty(String snippetText) {
+        return snippetText.replaceAll("\\(\\)", "")
                 .replaceAll("\\s+", " ")
                 .replaceAll(" %", "\u2009%");
     }
 
-    static String snippet(Map<LightString, int[]> wordPos, Map<LightString, Integer> idfs, Page page) {
-        int[][] mat = new int[wordPos.size()][];
-        int[] idfsAr = new int[wordPos.size()];
-        AtomicInteger ai = new AtomicInteger();
-        wordPos.forEach((word, pos) -> {
-            mat[ai.get()] = pos;
-            idfsAr[ai.getAndIncrement()] = idfs.get(word);
+    static String snippet(Map<LightString, int[]> wordToPositions,
+                          Map<LightString, Integer> wordToIdf, Page page) {
+        int[][] wordIdToPositions = new int[wordToPositions.size()][];
+        int[] wordIdToIdf = new int[wordToPositions.size()];
+        AtomicInteger wordId = new AtomicInteger();
+        wordToPositions.forEach((word, positionsAtPage) -> {
+            wordIdToPositions[wordId.get()] = positionsAtPage;
+            wordIdToIdf[wordId.getAndIncrement()] = wordToIdf.get(word);
         });
 
-        int optPos = optimumSnippetPosition(mat, idfsAr);
-        return getSnippetText(page.getContent(), optPos);
+        int optimumPosition = optimumSnippetPosition(wordIdToPositions, wordIdToIdf);
+        return getSnippetText(page.getContent(), optimumPosition);
     }
 
-    static int optimumSnippetPosition(int[][] wordPositions, int[] idfs) {
-        int bestPos = 0;
+    static int optimumSnippetPosition(int[][] wordIdToPositions, int[] wordIdToIdf) {
+        int bestSnippetPosition = 0;
         int bestScope = -1;
 
-        int[] is = new int[wordPositions.length];
-        int[] pos = Util.mergeSimple(wordPositions);
-        for (int p : pos) {
+        int[] wordIdToCounter = new int[wordIdToPositions.length];
+        int[] allPositions = Util.unionAndSort(wordIdToPositions);
+        for (int position : allPositions) {
             int scope = 0;
-            for (int i = 0; i < DISTANCE; i++) {
-                Set<Integer> added = new HashSet<>();
-                for (int k = 0; k < wordPositions.length; k++) {
-                    if (is[k] < wordPositions[k].length && wordPositions[k][is[k]] == p + i) {
-                        int tfIdf = Ranking.tfIdf(idfs[k], wordPositions[k]);
-                        scope += added.contains(k) ? 1 : tfIdf;
-                        is[k]++;
+            Set<Integer> added = new HashSet<>();
+            for (int diffPosition = 0; diffPosition < DISTANCE; diffPosition++) {
+                for (int wordId = 0; wordId < wordIdToPositions.length; wordId++) {
+                    if (wordIdToCounter[wordId] < wordIdToPositions[wordId].length
+                            && wordIdToPositions[wordId][wordIdToCounter[wordId]] == position + diffPosition) {
+                        int tfIdf = Ranking.tfIdf(wordIdToIdf[wordId], wordIdToPositions[wordId]);
+                        scope += added.contains(wordId) ? 1 : tfIdf;
+                        added.add(wordId);
+                        wordIdToCounter[wordId]++;
                     }
                 }
             }
             if (scope > bestScope) {
-                bestPos = p;
+                bestSnippetPosition = position;
                 bestScope = scope;
             }
         }
 
-        return bestPos;
+        return bestSnippetPosition;
     }
 
     static String selectQueryWords(String snip, Set<LightString> wordsAsSet) {
