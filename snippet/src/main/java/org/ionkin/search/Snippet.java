@@ -25,20 +25,20 @@ public class Snippet {
      **/
     public static Map<Integer, QueryPage> snippets(int[] ids, Map<LightString, Integer> idfs,
                                                    Map<LightString, Positions> wordPositionsMap) throws IOException {
-        Map<Integer, QueryPage> res = new HashMap<>();
+        Map<Integer, QueryPage> result = new HashMap<>();
         Set<LightString> wordsAsSet = new HashSet<>(idfs.keySet());
 
-        for (int docId : ids) {
-            Map<LightString, int[]> wordPos = new HashMap<>();
-            wordPositionsMap.forEach((k, v) -> wordPos.put(k, Compressor.decompressVb(v.positions(docId))));
-            Page page = TextArticleIterator.readPage(docId);
-            String snip = Snippet.snippet(wordPos, idfs, page);
-            snip = pretty(snip);
-            snip = selectQueryWords(snip, wordsAsSet);
+        for (int pageId : ids) {
+            Map<LightString, int[]> wordToPositionsAtPage = new HashMap<>();
+            wordPositionsMap.forEach((k, v) -> wordToPositionsAtPage.put(k, Compressor.decompressVb(v.positions(pageId))));
+            Page page = TextArticleIterator.readPage(pageId);
+            String snippetText = Snippet.snippet(wordToPositionsAtPage, idfs, page);
+            snippetText = pretty(snippetText);
+            snippetText = selectQueryWords(snippetText, wordsAsSet);
 
-            res.put(docId, new QueryPage(docId, page.getTitle(), snip));
+            result.put(pageId, new QueryPage(pageId, page.getTitle(), snippetText));
         }
-        return res;
+        return result;
     }
 
     static String pretty(String snippetText) {
@@ -90,19 +90,22 @@ public class Snippet {
         return bestSnippetPosition;
     }
 
-    static String selectQueryWords(String snip, Set<LightString> wordsAsSet) {
-        String[] snipWords = Util.splitPattern.split(snip);
-        for (String snipWord : snipWords) {
-            LightString norm1 = new LightString(Util.normalize(snipWord));
-            if (wordsAsSet.contains(norm1)) {
-                Pattern pat = Pattern.compile("([^" + Util.wordSymbols + "])" + snipWord + "([^" + Util.wordSymbols + "])");
-                Matcher m = pat.matcher(snip);
+    // input: some text, Set(text)
+    // output: some <b>text</b>
+    static String selectQueryWords(String snippetText, Set<LightString> wordsAsSet) {
+        String[] snipWords = Util.splitPattern.split(snippetText);
+        for (String snippetWord : snipWords) {
+            LightString normalized = new LightString(Util.normalize(snippetWord));
+            if (wordsAsSet.contains(normalized)) {
+                Pattern pat =
+                        Pattern.compile("([^" + Util.wordSymbols + "])" + snippetWord + "([^" + Util.wordSymbols + "])");
+                Matcher m = pat.matcher(snippetText);
                 if (m.find()) {
-                    snip = m.replaceAll("$1<b>" + snipWord + "</b>$2");
+                    snippetText = m.replaceAll("$1<b>" + snippetWord + "</b>$2");
                 }
             }
         }
-        return snip.replaceAll("\\s+", " ")
+        return snippetText.replaceAll("\\s+", " ")
                 .replaceAll("<b><b>", "<b>")
                 .replaceAll("</b></b>", "</b>")
                 .replaceAll("<b></b>", "")
