@@ -1,6 +1,7 @@
 package org.ionkin.search;
 
 import org.ionkin.Ranking;
+import org.ionkin.search.config.AppConfig;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -13,7 +14,8 @@ import java.util.regex.Pattern;
 
 public class Snippet {
 
-    static final int DISTANCE = 20;
+    private static final int DISTANCE = 20;
+    private static final int SNIPPET_LENGTH = AppConfig.snippetLength;
 
     public static Map<Integer, QueryPage> snippets(int[] ids, Map<LightString, Integer> idfs,
                                                    Map<LightString, Positions> wordPositionsMap) throws IOException {
@@ -126,11 +128,11 @@ public class Snippet {
                 }
             }
         }
-        if (snipEnd <= snipStart + 100) {
-            snipEnd = Math.min(snipStart + 100, content.length());
+        if (snipEnd <= snipStart + SNIPPET_LENGTH) {
+            snipEnd = Math.min(snipStart + SNIPPET_LENGTH, content.length());
         }
-        if (snipEnd - snipStart < 100) {
-            snipStart = Math.max(snipStart - (100 - (snipEnd - snipStart)), 0);
+        if (snipEnd - snipStart < SNIPPET_LENGTH) {
+            snipStart = Math.max(snipStart - (SNIPPET_LENGTH - (snipEnd - snipStart)), 0);
         }
         return content.substring(snipStart, snipEnd);
     }

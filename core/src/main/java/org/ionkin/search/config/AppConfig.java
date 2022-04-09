@@ -9,4 +9,5 @@ public class AppConfig {
     public static final String locale = config.getString("base.locale");
     public static final String wordSymbols = config.getString("word.symbols");
     public static final String searchableSymbols = config.getString("word.searchable-symbols");
+    public static final int snippetLength = config.getInt("snippet.max-length");
 }
