@@ -1,11 +1,30 @@
 package org.ionkin;
 
 import org.ionkin.search.BytesRange;
+import org.ionkin.search.Util;
 import org.ionkin.search.VariableByte;
+import org.ionkin.search.set.CompactHashSet;
+import org.ionkin.search.set.IntTranslator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 public class Ranking {
+    private static final Logger logger = LoggerFactory.getLogger(Ranking.class);
 
-    private static final int RUSSIAN_WIKI = 1_450_000;
+    private static int numberOfPages;
+
+    static {
+        try {
+            CompactHashSet<Integer> pageIds = CompactHashSet.read(Util.docIdsPath, new IntTranslator());
+            numberOfPages = pageIds.size();
+        } catch (IOException e) {
+            logger.error("Can't read pages ids. Use default value", e);
+            numberOfPages = 10_000_000;
+            e.printStackTrace();
+        }
+    }
 
     public static int tfIdf(int idf, int[] positions) {
         return idf * tf(positions);
@@ -22,7 +41,7 @@ public class Ranking {
     public static int idf(BytesRange index) {
         if (index == null || index.length() == 0) return 0;
         int freq = VariableByte.decompressSize(index);
-        int r = logFreq(RUSSIAN_WIKI / freq);
+        int r = logFreq(numberOfPages / freq);
         return r * r * r;
     }
 
