@@ -86,6 +86,6 @@ public class SnippetTest {
     public void snippet() throws Exception {
         Map<LightString, int[]> wordPos;
         Map<LightString, Integer> idfs;
-        Page page = TextArticleIterator.readPage(914021);
+        Page page = TextArticleIterator.readPage(40002);
     }
 }
